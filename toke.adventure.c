@@ -9,7 +9,8 @@ struct stat st = {0};
 void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
-int ArrayIsEmpty(char **arrayToCheck, int arraySize);
+int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
+int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
 
 // Program entry point
 int main()
@@ -55,12 +56,18 @@ void GenerateAllRoomFiles()
    int i = 0;
    const int maxRoomNumber = 7;
    char *roomNames[7] = { NULL }; 
+   int randomNumber = 0;
 
    // Generate a random number between 0 and 9 inclusive
    // Check if posssible[random] string is in roomNames
-   while (ArrayIsEmpty(roomNames, maxRoomNumber) == 1)
+   while (AnyElementInArrayEmpty(roomNames, maxRoomNumber) == 1)
    {
       printf("There are rooms empty.\n", i, roomNames[i]);
+      randomNumber = GenerateRandomNumber(0, 7, 1);
+
+      if (ElementNotInArray(roomNames, maxRoomNumber, possibleRoomNames[randomNumber]))
+      {
+      }
 
       // Add a string to string array
       roomNames[0] = "hello";
@@ -70,8 +77,10 @@ void GenerateAllRoomFiles()
       roomNames[4] = "hello";
       roomNames[5] = "hello";
       roomNames[6] = "hello";
+
+      // Todo
+      // 1. Function to check if a string already exists in an array
    }
-   int randomNumber = GenerateRandomNumber(0, 7, 1);
 
    // Use this to test the room names
    for (i = 0; i < maxRoomNumber; i++)
@@ -88,7 +97,12 @@ void GenerateAllRoomFiles()
    // Create room connections
 }
 
-int ArrayIsEmpty(char **arrayToCheck, int arraySize)
+int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element)
+{
+}
+
+// Return: 1 means true and 0 means false
+int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize)
 {
    int i = 0;
    for (i = 0; i < arraySize; i++)
