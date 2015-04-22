@@ -11,6 +11,7 @@ void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
 int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
 int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
+int GetEmptySlot(char **arrayToCheck, int arraySize);
 
 // Program entry point
 int main()
@@ -43,7 +44,7 @@ void GenerateAllRoomFiles()
    
    // Create a list of possible room names
    const int numPossibleRoomNames = 10;
-   const char *possibleRoomNames[10] = 
+   char *possibleRoomNames[10] = 
    {
       "alpha", "cinna",
       "earth", "haven",
@@ -55,31 +56,39 @@ void GenerateAllRoomFiles()
    // Create an array of size 7
    int i = 0;
    const int maxRoomNumber = 7;
-   char *roomNames[7] = { NULL }; 
+   char *roomNames[7] = 
+   { 
+      "EmptyElementHere", "EmptyElementHere", 
+      "EmptyElementHere", "EmptyElementHere", 
+      "EmptyElementHere", "EmptyElementHere", 
+      "EmptyElementHere" 
+   }; 
    int randomNumber = 0;
+   int emptySlot = 0;
 
    // Generate a random number between 0 and 9 inclusive
    // Check if posssible[random] string is in roomNames
    while (AnyElementInArrayEmpty(roomNames, maxRoomNumber) == 1)
    {
-      printf("There are rooms empty.\n", i, roomNames[i]);
+      //printf("There are rooms empty.\n", i, roomNames[i]);
       randomNumber = GenerateRandomNumber(0, 7, 1);
 
-      if (ElementNotInArray(roomNames, maxRoomNumber, possibleRoomNames[randomNumber]))
+      if (ElementNotInArray(roomNames, maxRoomNumber, possibleRoomNames[randomNumber]) == 1)
       {
+	 // Find the empty slot
+	 emptySlot = GetEmptySlot(roomNames, maxRoomNumber);
+	 if (emptySlot > -1)
+	 {
+	    roomNames[emptySlot] = possibleRoomNames[randomNumber];
+	    //strcpy(roomNames[emptySlot], possibleRoomNames[randomNumber]);
+	    //roomNames[emptySlot] = "hello";
+	    //printf("%s\n", possibleRoomNames[randomNumber]);
+	 }
       }
 
-      // Add a string to string array
-      roomNames[0] = "hello";
-      roomNames[1] = "hello";
-      roomNames[2] = "hello";
-      roomNames[3] = "hello";
-      roomNames[4] = "hello";
-      roomNames[5] = "hello";
-      roomNames[6] = "hello";
-
       // Todo
-      // 1. Function to check if a string already exists in an array
+      // 1. Function to check if a string already exists in an array - DONE
+      // 2. Populate the array with randoms 
    }
 
    // Use this to test the room names
@@ -97,8 +106,33 @@ void GenerateAllRoomFiles()
    // Create room connections
 }
 
+// Return: All positive numbers mean empty slot found.
+//         -1 means no empty slots found
+int GetEmptySlot(char **arrayToCheck, int arraySize)
+{
+   int i = 0;
+   for (i = 0; i < arraySize; i++)
+   {
+      if (arrayToCheck[i] == "EmptyElementHere")
+      {
+	 return i;
+      }
+   }
+   return -1;
+}
+
+// Return: 1 means true and 0 means false
 int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element)
 {
+   int i = 0;
+   for (i = 0; i < arraySize; i++)
+   {
+      if (strcmp(arrayToCheck[i], element) == 0)
+      {
+	 return 0;
+      }
+   }
+   return 1;
 }
 
 // Return: 1 means true and 0 means false
@@ -107,7 +141,7 @@ int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize)
    int i = 0;
    for (i = 0; i < arraySize; i++)
    {
-      if (arrayToCheck[i] == NULL)
+      if (arrayToCheck[i] == "EmptyElementHere")
       {
 	 return 1;
       }
