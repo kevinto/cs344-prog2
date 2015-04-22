@@ -9,14 +9,13 @@ struct stat st = {0};
 void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
+int ArrayIsEmpty(char **arrayToCheck, int arraySize);
 
 // Program entry point
 int main()
 {
    GenerateRoomsDirectory();
    GenerateAllRoomFiles();
-
-   printf("random: %d\n", GenerateRandomNumber(0, 7, 1));
 }
 
 void GenerateRoomsDirectory()
@@ -59,6 +58,20 @@ void GenerateAllRoomFiles()
 
    // Generate a random number between 0 and 9 inclusive
    // Check if posssible[random] string is in roomNames
+   while (ArrayIsEmpty(roomNames, maxRoomNumber) == 1)
+   {
+      printf("There are rooms empty.\n", i, roomNames[i]);
+
+      // Add a string to string array
+      roomNames[0] = "hello";
+      roomNames[1] = "hello";
+      roomNames[2] = "hello";
+      roomNames[3] = "hello";
+      roomNames[4] = "hello";
+      roomNames[5] = "hello";
+      roomNames[6] = "hello";
+   }
+   int randomNumber = GenerateRandomNumber(0, 7, 1);
 
    // Use this to test the room names
    for (i = 0; i < maxRoomNumber; i++)
@@ -73,6 +86,19 @@ void GenerateAllRoomFiles()
    // 	   again
    // 	
    // Create room connections
+}
+
+int ArrayIsEmpty(char **arrayToCheck, int arraySize)
+{
+   int i = 0;
+   for (i = 0; i < arraySize; i++)
+   {
+      if (arrayToCheck[i] == NULL)
+      {
+	 return 1;
+      }
+   }
+   return 0;
 }
 
 /**************************************************************
