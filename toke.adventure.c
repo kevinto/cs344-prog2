@@ -6,17 +6,20 @@
 struct stat st = {0};
 
 // Function Declarations
-void generateRoomsDirectory();
-void generateAllRoomFiles();
+void GenerateRoomsDirectory();
+void GenerateAllRoomFiles();
+int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
 
 // Program entry point
 int main()
 {
-   generateRoomsDirectory();
-   generateAllRoomFiles();
+   GenerateRoomsDirectory();
+   GenerateAllRoomFiles();
+
+   printf("random: %d\n", GenerateRandomNumber(0, 7, 1));
 }
 
-void generateRoomsDirectory()
+void GenerateRoomsDirectory()
 {
    // Get Process Id
    int curPid = getpid();
@@ -34,7 +37,7 @@ void generateRoomsDirectory()
    }
 }
 
-void generateAllRoomFiles()
+void GenerateAllRoomFiles()
 {
    // Create room files
    
@@ -70,4 +73,27 @@ void generateAllRoomFiles()
    // 	   again
    // 	
    // Create room connections
+}
+
+/**************************************************************
+ * * Entry:
+ * *	minNumber - the minimum random number
+ * *	maxNumber - the maximum random number
+ * *
+ * * Exit:
+ * *	Returns a randomly generated number.
+ * *
+ * * Purpose:
+ * *	To generate a random number between the min and max.
+ * *
+ * ***************************************************************/
+int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet)
+{
+	
+   // Set seed of random number to make number more random.
+   srand(time(0) + timeOffSet);
+
+   // Generate random number
+   int range = maxNumber - minNumber;
+   return (minNumber + (rand() % (range + 1)));
 }
