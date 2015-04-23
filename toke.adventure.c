@@ -4,9 +4,9 @@
 #include <sys/stat.h>
 
 struct stat st = {0};
+char globalRoomsDirectoryName[80];
 
 // Function Declarations
-void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
 int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
@@ -18,8 +18,6 @@ void RemoveElementByValue(char **array, int arraySize, char *value);
 // Program entry point
 int main()
 {
-   GenerateRoomsDirectory();
-
    GenerateAllRoomFiles();
 }
 
@@ -41,9 +39,29 @@ void GenerateRoomsDirectory()
    }
 }
 
+// Creates empty room files only
 void GenerateAllRoomFiles()
 {
+
+   // Get Process Id
+   int curPid = getpid();
+   char pidString[10];
+   snprintf(pidString, sizeof(pidString), "%d", curPid);
+
+   // Generate rooms directory name
+   char directoryName[] = "toke.rooms.";
+   strcat(directoryName, pidString);
+
+   // Create rooms directory
+   if (stat(directoryName, &st) == -1)
+   {
+      mkdir(directoryName, 0700);
+   }
+
+   strncpy(globalRoomsDirectoryName, directoryName, 80);
+
    // Create room files
+   FILE *filePointer;
    
    // Array of possible room names 
    int numPossibleRoomNames = 10;
@@ -66,34 +84,54 @@ void GenerateAllRoomFiles()
       "EmptyElementHere" 
    }; 
 
-   // This assignment function selects a random spot to start, so 
-   // its not truly random
+   // Explanation of how the room algorithm works:
+   //  For each element in the rooms array we are going to 
+   //  find a random element in the possible rooms array. Once 
+   //  the random string is found we remove that string from the 
+   //  possible rooms list and add it to the rooms array. Each new 
+   //  possible room query will only return a random element from
+   //  what is left in the possible room array.
    int i = 0;
    char *roomName;
+   char fileName[80];
    for (i = 0; i < maxRoomNumber; i++)
    {
       roomName = GetRandomElement(possibleRoomNames, maxRoomNumber, i);
       RemoveElementByValue(possibleRoomNames, numPossibleRoomNames, roomName);
       roomNames[i] = roomName;
-      //roomNames[i] = possibleRoomNames[(randomNumber + i) % 10];
+
+      // Generate the file name
+      strncpy(fileName, directoryName, 80);
+      strcat(fileName, "/");
+      strncat(fileName, roomName, 80);
+     
+      // Create the files
+      filePointer = fopen(fileName, "w");
+      fclose(filePointer);
    }
 
    // Use this to test the room names
-   for (i = 0; i < maxRoomNumber; i++)
-   {
-      printf("name %d: %s\n", i, roomNames[i]);
+   //for (i = 0; i < maxRoomNumber; i++)
+   //{
+   //   printf("name %d: %s\n", i, roomNames[i]);
+   //}
 
-   }
-
-   // 	  For each slot in array generate a random number
-   // 	   populate the size 7 array with the random index from
-   // 	   array size 10. check if the size 7 array already has the 
-   // 	   name if it does then increment the random number and check 
-   // 	   again
-   // 	
-   // Create room connections
 }
-     
+
+ /**************************************************************
+ * * Entry:
+ * *	array  - an array of strings 
+ * *	arraySize  - the size of the array
+ * *	value - the string value you want to replace with "EMPTY"
+ * *
+ * * Exit:
+ * *	No return value
+ * *
+ * * Purpose:
+ * *	To find the specified string in the array and replace it 
+ * *    with "EMPTY"
+ * *
+ * ***************************************************************/    
 // Find the specified value and delete it from the array. Replace the 
 // value at that position with "EMPTY"
 void RemoveElementByValue(char **array, int arraySize, char *value)
@@ -108,8 +146,22 @@ void RemoveElementByValue(char **array, int arraySize, char *value)
    }
 }
 
-// Get a random element from the specified array. If we encounter an empty
-// element then we try to find the next element that is not empty
+/**************************************************************
+ * * Entry:
+ * *	array  - an array of strings. This function will ignore all
+ * *             elements with the value of "EMPTY"
+ * *	arraySize  - the size of the array
+ * *	randomIncrement - offset to make the function generate a 
+ * *                      different random number when this function
+ * *                      is being used in a loop.
+ * *
+ * * Exit:
+ * *	Returns a random string from a string array.
+ * *
+ * * Purpose:
+ * *	To get a random string from a string array.
+ * *
+ * ***************************************************************/
 char* GetRandomElement(char **array, int arraySize, int randomIncrement)
 {
    int randomNumber = GenerateRandomNumber(0, arraySize, randomIncrement);
@@ -171,6 +223,9 @@ int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize)
  * * Entry:
  * *	minNumber - the minimum random number
  * *	maxNumber - the maximum random number
+ * *	timeOffSet - offset to make the function generate a 
+ * *                 different random number when this function
+ * *                 is being used in a loop.
  * *
  * * Exit:
  * *	Returns a randomly generated number.
