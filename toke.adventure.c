@@ -12,6 +12,8 @@ int GenerateRandomNumber(const int minNumber, const int maxNumber, const int tim
 int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
 int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
 int GetEmptySlot(char **arrayToCheck, int arraySize);
+char* GetRandomElement(char **array, int arraySize, int randomIncrement);
+void RemoveElementByValue(char **array, int arraySize, char *value);
 
 // Program entry point
 int main()
@@ -41,13 +43,10 @@ void GenerateRoomsDirectory()
 
 void GenerateAllRoomFiles()
 {
-   // Sleep here to maintain randomness
-   sleep(1);
-
    // Create room files
    
-   // Create a list of possible room names
-   const int numPossibleRoomNames = 10;
+   // Array of possible room names 
+   int numPossibleRoomNames = 10;
    char *possibleRoomNames[10] = 
    {
       "alpha", "cinna",
@@ -57,8 +56,7 @@ void GenerateAllRoomFiles()
       "sirius", "vega"
    };
 
-   // Create an array of size 7
-   int i = 0;
+   // Array of actual game-time room names
    const int maxRoomNumber = 7;
    char *roomNames[7] = 
    { 
@@ -67,15 +65,17 @@ void GenerateAllRoomFiles()
       "EmptyElementHere", "EmptyElementHere", 
       "EmptyElementHere" 
    }; 
-   int randomNumber = 0;
-   int emptySlot = 0;
 
-   randomNumber = GenerateRandomNumber(0, 7, 1);
-
-   // Optimized version
+   // This assignment function selects a random spot to start, so 
+   // its not truly random
+   int i = 0;
+   char *roomName;
    for (i = 0; i < maxRoomNumber; i++)
    {
-      roomNames[i] = possibleRoomNames[(randomNumber + i) % 10];
+      roomName = GetRandomElement(possibleRoomNames, maxRoomNumber, i);
+      RemoveElementByValue(possibleRoomNames, numPossibleRoomNames, roomName);
+      roomNames[i] = roomName;
+      //roomNames[i] = possibleRoomNames[(randomNumber + i) % 10];
    }
 
    // Use this to test the room names
@@ -93,49 +93,35 @@ void GenerateAllRoomFiles()
    // 	
    // Create room connections
 }
-
-void GenerateAllRoomFilesFaster1()
+     
+// Find the specified value and delete it from the array. Replace the 
+// value at that position with "EMPTY"
+void RemoveElementByValue(char **array, int arraySize, char *value)
 {
-   // Create room files
-   
-   // Create a list of possible room names
-   const int numPossibleRoomNames = 10;
-   char *possibleRoomNames[10] = 
-   {
-      "alpha", "cinna",
-      "earth", "haven",
-      "helicon","hesperos",
-      "trantor", "santanni",
-      "sirius", "vega"
-   };
-
-   // Create an array of size 7
    int i = 0;
-   const int maxRoomNumber = 7;
-   char *roomNames[7] = 
-   { 
-      "EmptyElementHere", "EmptyElementHere", 
-      "EmptyElementHere", "EmptyElementHere", 
-      "EmptyElementHere", "EmptyElementHere", 
-      "EmptyElementHere" 
-   }; 
-   int randomNumber = 0;
-   int emptySlot = 0;
-
-   randomNumber = GenerateRandomNumber(0, 7, 1);
-
-   // Optimized version
-   for (i = 0; i < maxRoomNumber; i++)
+   for (i = 0; i < arraySize; i++)
    {
-      roomNames[i] = possibleRoomNames[(randomNumber + i) % 10];
+      if (strcmp(array[i], value) == 0)
+      {
+	 array[i] = "EMPTY";
+      }
+   }
+}
+
+// Get a random element from the specified array. If we encounter an empty
+// element then we try to find the next element that is not empty
+char* GetRandomElement(char **array, int arraySize, int randomIncrement)
+{
+   int randomNumber = GenerateRandomNumber(0, arraySize, randomIncrement);
+   int i = 0;
+
+   while (strcmp(array[randomNumber], "EMPTY") == 0)
+   {
+      i++;
+      randomNumber = (randomNumber + i) % 10;
    }
 
-   // Use this to test the room names
-   for (i = 0; i < maxRoomNumber; i++)
-   {
-      printf("name %d: %s\n", i, roomNames[i]);
-
-   }
+   return array[randomNumber];
 }
 
 // Return: All positive numbers mean empty slot found.
