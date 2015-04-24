@@ -15,6 +15,7 @@ int GetEmptySlot(char **arrayToCheck, int arraySize);
 char* GetRandomElement(char **array, int arraySize, int randomIncrement);
 void RemoveElementByValue(char **array, int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
+void GenerateRoomConnections(char **rooms, int numRooms);
 
 // Program entry point
 int main()
@@ -118,12 +119,13 @@ void GenerateAllRoomFiles()
       fclose(filePointer);
    }
 
-   // Use this to test the room names
-   //for (i = 0; i < maxRoomNumber; i++)
-   //{
-   //   printf("name %d: %s\n", i, roomNames[i]);
-   //}
+   // TODO
+   // 1. Determine the data structure to hold rooms
+   GenerateRoomConnections(roomNames, maxRoomNumber);
+}
 
+void GenerateRoomConnections(char **rooms, int numRooms)
+{
 }
 
  /**************************************************************
