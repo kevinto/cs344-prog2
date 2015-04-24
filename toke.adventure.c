@@ -4,9 +4,9 @@
 #include <sys/stat.h>
 
 struct stat st = {0};
-char globalRoomsDirectoryName[80];
 
 // Function Declarations
+void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
 int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
@@ -14,15 +14,41 @@ int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
 int GetEmptySlot(char **arrayToCheck, int arraySize);
 char* GetRandomElement(char **array, int arraySize, int randomIncrement);
 void RemoveElementByValue(char **array, int arraySize, char *value);
+void GetRoomsDirName(char *returnValue, int maxLen);
 
 // Program entry point
 int main()
 {
+   GenerateRoomsDirectory();
    GenerateAllRoomFiles();
 }
 
 void GenerateRoomsDirectory()
 {
+   char dirName[80];
+   GetRoomsDirName(dirName, 80);
+  
+   // Create rooms directory
+   if (stat(dirName, &st) == -1)
+   {
+      mkdir(dirName, 0700);
+   }
+}
+
+ /**************************************************************
+ * * Entry:
+ * *	returnValue  - pointer to hold the return string value
+ * *	manLen  - max length of the return value
+ * *
+ * * Exit:
+ * *	No return value
+ * *
+ * * Purpose:
+ * *	To get the room's directory name
+ * *
+ * ***************************************************************/
+void GetRoomsDirName(char *returnValue, int maxLen)
+{
    // Get Process Id
    int curPid = getpid();
    char pidString[10];
@@ -32,33 +58,15 @@ void GenerateRoomsDirectory()
    char directoryName[] = "toke.rooms.";
    strcat(directoryName, pidString);
 
-   // Create rooms directory
-   if (stat(directoryName, &st) == -1)
-   {
-      mkdir(directoryName, 0700);
-   }
+   strncpy(returnValue, directoryName, maxLen);
+   //printf(" here\n");
 }
 
 // Creates empty room files only
 void GenerateAllRoomFiles()
 {
-
-   // Get Process Id
-   int curPid = getpid();
-   char pidString[10];
-   snprintf(pidString, sizeof(pidString), "%d", curPid);
-
-   // Generate rooms directory name
-   char directoryName[] = "toke.rooms.";
-   strcat(directoryName, pidString);
-
-   // Create rooms directory
-   if (stat(directoryName, &st) == -1)
-   {
-      mkdir(directoryName, 0700);
-   }
-
-   strncpy(globalRoomsDirectoryName, directoryName, 80);
+   char directoryName[80];
+   GetRoomsDirName(directoryName, 80);
 
    // Create room files
    FILE *filePointer;
@@ -132,8 +140,6 @@ void GenerateAllRoomFiles()
  * *    with "EMPTY"
  * *
  * ***************************************************************/    
-// Find the specified value and delete it from the array. Replace the 
-// value at that position with "EMPTY"
 void RemoveElementByValue(char **array, int arraySize, char *value)
 {
    int i = 0;
