@@ -3,6 +3,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// Constant Declarations
+#define maxRoomNameLen 80
+#define maxRoomConnections 6 
+
+// Struct Declarations
+struct Room 
+{
+   char roomName[maxRoomNameLen];
+   char connections[maxRoomConnections][maxRoomNameLen];
+   char roomType[maxRoomNameLen];
+};
 struct stat st = {0};
 
 // Function Declarations
@@ -12,10 +23,11 @@ int GenerateRandomNumber(const int minNumber, const int maxNumber, const int tim
 int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
 int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
 int GetEmptySlot(char **arrayToCheck, int arraySize);
-char* GetRandomElement(char **array, int arraySize, int randomIncrement);
+void GetRandomElement(char **array, int arraySize, int randomIncrement, char *returnValue);
 void RemoveElementByValue(char **array, int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
 void GenerateRoomConnections(char **rooms, int numRooms);
+void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, char **roomNames);
 
 // Program entry point
 int main()
@@ -101,11 +113,11 @@ void GenerateAllRoomFiles()
    //  possible room query will only return a random element from
    //  what is left in the possible room array.
    int i = 0;
-   char *roomName;
+   char roomName[80];
    char fileName[80];
    for (i = 0; i < maxRoomNumber; i++)
    {
-      roomName = GetRandomElement(possibleRoomNames, maxRoomNumber, i);
+      GetRandomElement(possibleRoomNames, maxRoomNumber, i, roomName);
       RemoveElementByValue(possibleRoomNames, numPossibleRoomNames, roomName);
       roomNames[i] = roomName;
 
@@ -120,12 +132,52 @@ void GenerateAllRoomFiles()
    }
 
    // TODO
-   // 1. Determine the data structure to hold rooms
+   // 1. Create an adjacency matrix that is 7 by 6. 7 rooms
+   //    by max number of connections
+   // 2. Determine how many connections in the adjacency array
+   //    by either putting "OPEN" or "CLOSED" 
+   // 3. Algorithm to connect the rooms:
+   //     a. Randomly pick a room.
+   //     b. Determine if room has open connections.
+   //     c. If room has an open connection, pick another room
+   //        with an open connection.
+   //     d. Connect the two rooms.
+   //     e. Randomly pick another empty room
+   //     f. Randomly pick a connected room that has open connections
+   //     g. Connect the rooms.
+   //
+
+   // Create an array of structs
+   struct Room rooms[7];
+   InitializeRoomsArray(rooms, maxRoomNumber, roomNames);
    GenerateRoomConnections(roomNames, maxRoomNumber);
+}
+
+void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, char **roomNames)
+{
+   //struct Room 
+   //{
+   //   char roomName[maxRoomNameLen];
+   //   char connections[maxRoomConnections][maxRoomNameLen];
+   //   char roomType[maxRoomNameLen];
+   //};
+
+   strncpy(rooms[0].roomName, roomNames[0], 80);
+  // printf("%s\n", rooms[0].roomName);
 }
 
 void GenerateRoomConnections(char **rooms, int numRooms)
 {
+   // Connect the two initial rooms first
+   char roomName[80]; 
+   GetRandomElement(rooms, numRooms, 0, roomName);
+   //printf("%s\n", roomName);
+
+   int i;
+   for (i = 0; i < numRooms; i++)
+   {
+     // printf("%s\n", rooms[i]);
+   }
 }
 
  /**************************************************************
@@ -170,7 +222,7 @@ void RemoveElementByValue(char **array, int arraySize, char *value)
  * *	To get a random string from a string array.
  * *
  * ***************************************************************/
-char* GetRandomElement(char **array, int arraySize, int randomIncrement)
+void GetRandomElement(char **array, int arraySize, int randomIncrement, char *returnValue)
 {
    int randomNumber = GenerateRandomNumber(0, arraySize, randomIncrement);
    int i = 0;
@@ -181,7 +233,7 @@ char* GetRandomElement(char **array, int arraySize, int randomIncrement)
       randomNumber = (randomNumber + i) % 10;
    }
 
-   return array[randomNumber];
+   strncpy(returnValue, array[randomNumber], 80);
 }
 
 // Return: All positive numbers mean empty slot found.
