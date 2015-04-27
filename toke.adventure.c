@@ -22,21 +22,16 @@ struct stat st = {0};
 void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
-int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize);
-int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element);
-int GetEmptySlot(char **arrayToCheck, int arraySize);
 void GetRandomElement(char **array, int arraySize, int randomIncrement, char *returnValue);
 void GetRandomElementFrom2D(int maxChar, char array[][maxChar], int arraySize, int randomIncrement, char *returnValue);
 void RemoveElementByValue(char **array, int arraySize, char *value);
-void RemoveArrayElementByValue(int maxChar, char array[][maxChar], int arraySize, char *value);
-void AddElementToArrayByValue(int maxChar, char array[][maxChar], int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
 void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar]);
-void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char *roomForConnection);
-void GetRoomWithOpenConn(struct Room rooms[], int numRooms, char *returnRoomName);
 int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom);
 void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, int highPriorityRoomPos);
+void ClearRooms(struct Room rooms[], int maxRoomNumber);
+int ImproperConnections(struct Room rooms[], int maxRoomNumber);
 
 // Program entry point
 int main()
@@ -138,6 +133,52 @@ void GenerateAllRoomFiles()
    struct Room rooms[7];
    InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
    GenerateRoomConnections2(rooms, maxRoomNumber, 80, roomNames);
+
+   // TODO
+   // Check if there are any nodes with less than 2 connections
+   while (ImproperConnections(rooms, maxRoomNumber) == 1)
+   {
+      ClearRooms(rooms, maxRoomNumber);
+      InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
+      GenerateRoomConnections2(rooms, maxRoomNumber, 80, roomNames);  
+      printf("restarted\n");
+   }
+
+}
+
+int ImproperConnections(struct Room rooms[], int maxRoomNumber)
+{
+   int i;
+   int numberOfTakenConnections = 0;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      numberOfTakenConnections = rooms[i].totalRoomConnections - rooms[i].numOpenConnections;
+      if ((numberOfTakenConnections) < 3)
+      {
+         return 1;
+      }
+   }
+   
+   return 0;
+}
+
+void ClearRooms(struct Room rooms[], int maxRoomNumber)
+{
+   int i;
+   int j;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      strncpy(rooms[i].roomName, "", 80);
+      strncpy(rooms[i].roomType, "", 80);
+
+      rooms[i].numOpenConnections = 0;
+      rooms[i].totalRoomConnections = 0;
+
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         strncpy(rooms[i].connections[j], "", 80);
+      }
+   }
 }
 
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar])
@@ -223,25 +264,16 @@ void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, ch
       }
       strncpy(rooms[i].connections[1], rooms[(i - 1) % numRooms].roomName, 80);
    }
-//------------------------------------------------------------
-//TODO:
-   // Fill up all the rooms till all their open connections are taken
-   // Find the room that needs connecting the most:
-   //    - has 3 total room connections, and greater than 0 OPEN connections
-   // 
 
-   // !!Loop construct will check to see if there are two open connections SOMEHOW.
-   // Find a room to link first
+   // Connect any rooms with open connections to any available rooms
    int highPriorityRoomPos = 0;
    char highPriorityRoom[80];
-   highPriorityRoomPos = FindHighPriorityRoom(rooms, numRooms, highPriorityRoom); // need to add more priorities
-   printf("hi room: %s\n", highPriorityRoom);
-   printf("hi room #: %d\n", highPriorityRoomPos);
+   for (i = 0; i < 20; i++)
+   {
+      highPriorityRoomPos = FindHighPriorityRoom(rooms, numRooms, highPriorityRoom); // need to add more priorities
+      LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
+   }
 
-   // find a room that can link to the room above
-   LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
-   
-   highPriorityRoomPos = FindHighPriorityRoom(rooms, numRooms, highPriorityRoom); // need to add more priorities
    LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
 //-------------------------------------------------
    // Print out all the objects
@@ -327,158 +359,26 @@ void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, 
 int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom)
 {
    int i;
+
+   // Only returns rooms with less than 3 connections
    for (i = 0; i < numRooms; i++)
    {
-      // Find rooms with less than 3 room connections
       if ((rooms[i].totalRoomConnections - rooms[i].numOpenConnections) < 3)
       {
          strcpy(highPriorityRoom, rooms[i].roomName);
          return i;
       }
    }
-}
 
-void GetRoomWithOpenConn(struct Room rooms[], int numRooms, char *returnRoomName)
-{
-   // the PROBLEM here is that we do not know which rooms are connected..
-   int i;
+   // Returns rooms with any open connections
    for (i = 0; i < numRooms; i++)
    {
-      printf("room name: %s\n", rooms[i].roomName);
-
-      int j;
-      for (j = 0; j < maxRoomConnections; j++)
+      if (rooms[i].numOpenConnections > 1)
       {
-         printf("room connection %d: %s\n", j, rooms[i].connections[j]);
-         if (strcmp(rooms[i].connections[j], "OPEN") == 0)
-         {
-            strncpy(returnRoomName, rooms[i].roomName, 80);
-            return;
-         }
+         strcpy(highPriorityRoom, rooms[i].roomName);
+         return i;
       }
    }
-
-   // Just in case, we dont have any open connections
-   returnRoomName = "EMPTY";
-}
-
-// Connects two rooms to each other
-void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char *roomForConnection)
-{
-   int i;
-   int j;
-   int firstConnectionMade = 0;
-   int secondConnectionMade = 0;
-   
-   // Connect the "room for connection to the "room to be connected to"
-   for (i = 0; i < numRooms; i++)
-   {
-      // Find the room to connect to
-      if (strcmp(rooms[i].roomName, roomToConnectTo) == 0)
-      {
-         // Look for an open connection
-         for (j = 0; j < maxRoomConnections; j++)
-         {
-            // Do not connect a room to itself
-            if (strcmp(rooms[i].connections[j], roomToConnectTo) == 0)
-            {
-               firstConnectionMade = 1;
-               break;
-            }
-
-            // If here is already pre-existing connection then get out
-            if (strcmp(rooms[i].connections[j], roomForConnection) == 0)
-            {
-               firstConnectionMade = 1;
-               break;
-            }
-
-            // Found an open slot, connect the rooms
-            if (strcmp(rooms[i].connections[j], "OPEN") == 0)
-            {
-               strncpy(rooms[i].connections[j], roomForConnection, 80);
-               firstConnectionMade = 1;
-               break;
-            }
-         }
-      }
-
-      if (firstConnectionMade == 1)
-      {
-         break;
-      }
-   }
-
-   // Connect the "room to be connected to" to the "room for connection"
-   for (i = 0; i < numRooms; i++)
-   {
-      // Find the room to connect to
-      if (strcmp(rooms[i].roomName, roomForConnection) == 0)
-      {
-         // Look for an open connection
-         for (j = 0; j < maxRoomConnections; j++)
-         {
-            // Do not connect a room to itself
-            if (strcmp(rooms[i].connections[j], roomForConnection) == 0)
-            {
-               secondConnectionMade = 1;
-               break;
-            }
-
-            // If here is already pre-existing connection then get out
-            if (strcmp(rooms[i].connections[j], roomToConnectTo) == 0)
-            {
-               secondConnectionMade = 1;
-               break;
-            }
-
-            // Found an open slot, connect the rooms
-            if (strcmp(rooms[i].connections[j], "OPEN") == 0)
-            {
-               strncpy(rooms[i].connections[j], roomToConnectTo, 80);
-               secondConnectionMade = 1;
-               break;
-            }
-         }
-      }
-
-      if (secondConnectionMade == 1)
-      {
-         break;
-      }
-   }
-}
-
-void AddElementToArrayByValue(int maxChar, char array[][maxChar], int arraySize, char *value)
-{
-   int i;
-   for (i = 0; i < arraySize; i++)
-   {
-      // If element is already in the array then do not add it.
-      if (strcmp(array[i], value) == 0)
-      {
-         return;
-      }
-
-      if (strcmp(array[i], "EMPTY") == 0)
-      {
-         strncpy(array[i], value, maxChar);
-         return;
-      }
-   }
-}
-
-// this method takes char array[][]
-void RemoveArrayElementByValue(int maxChar, char array[][maxChar], int arraySize, char *value)
-{
-   int i = 0;
-   for (i = 0; i < arraySize; i++)
-   {
-      if (strcmp(array[i], value) == 0)
-      {
-         strncpy(array[i], "EMPTY", maxChar);
-      }
-   }  
 }
 
  /**************************************************************
@@ -565,49 +465,6 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
    }
 
    strncpy(returnValue, array[randomNumber], 80);
-}
-
-// Return: All positive numbers mean empty slot found.
-//         -1 means no empty slots found
-int GetEmptySlot(char **arrayToCheck, int arraySize)
-{
-   int i = 0;
-   for (i = 0; i < arraySize; i++)
-   {
-      if (arrayToCheck[i] == "EmptyElementHere")
-      {
-	 return i;
-      }
-   }
-   return -1;
-}
-
-// Return: 1 means true and 0 means false
-int ElementNotInArray(char **arrayToCheck, int arraySize, const char *element)
-{
-   int i = 0;
-   for (i = 0; i < arraySize; i++)
-   {
-      if (strcmp(arrayToCheck[i], element) == 0)
-      {
-	 return 0;
-      }
-   }
-   return 1;
-}
-
-// Return: 1 means true and 0 means false
-int AnyElementInArrayEmpty(char **arrayToCheck, int arraySize)
-{
-   int i = 0;
-   for (i = 0; i < arraySize; i++)
-   {
-      if (arrayToCheck[i] == "EmptyElementHere")
-      {
-	 return 1;
-      }
-   }
-   return 0;
 }
 
 /**************************************************************
