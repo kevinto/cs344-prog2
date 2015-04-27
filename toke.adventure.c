@@ -30,8 +30,10 @@ void RemoveArrayElementByValue(int maxChar, char array[][maxChar], int arraySize
 void AddElementToArrayByValue(int maxChar, char array[][maxChar], int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
 void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
+void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar]);
 void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char *roomForConnection);
+void GetRoomWithOpenConn(struct Room rooms[], int numRooms, char *returnRoomName);
 
 // Program entry point
 int main()
@@ -129,31 +131,10 @@ void GenerateAllRoomFiles()
       fclose(filePointer);
    }
 
-   // TODO
-   // 1. Create an adjacency matrix that is 7 by 6. 7 rooms
-   //    by max number of connections
-   // 2. Determine how many connections in the adjacency array
-   //    by either putting "OPEN" or "CLOSED" 
-   // 3. Algorithm to connect the rooms:
-   //     a. Randomly pick a room.
-   //     b. Determine if room has open connections.
-   //     c. If room has an open connection, pick another room
-   //        with an open connection.
-   //     d. Connect the two rooms.
-   //     e. Randomly pick another empty room
-   //     f. Randomly pick a connected room that has open connections
-   //     g. Connect the rooms.
-   //
-
-   for (i = 0; i < 7; i++) 
-   {
-      //printf("room name: %s\n", roomNames[i]);
-   } 
-
    // Create an array of structs
    struct Room rooms[7];
    InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
-   GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);
+   GenerateRoomConnections2(rooms, maxRoomNumber, 80, roomNames);
 }
 
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar])
@@ -208,6 +189,44 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
          {
           strncpy(rooms[i].connections[k], "CLOSED", 80);
          }
+      }
+   }
+}
+
+void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar])
+{
+   int i;
+   for (i = 0; i < numRooms; i++)
+   {
+      // Connect the current room with the next room
+      strncpy(rooms[i].connections[0], rooms[(i + 1) % numRooms].roomName, 80);
+
+      // Connect the current room to the previous room
+      if (i == 0)
+      {
+         // The first room must connect to the last room
+         strncpy(rooms[i].connections[1], rooms[numRooms - 1].roomName, 80);
+         continue;
+      }
+      strncpy(rooms[i].connections[1], rooms[(i - 1) % numRooms].roomName, 80);
+
+      int j;
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         // printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+      }
+   }
+
+   // Print out all the objects
+   for (i = 0; i < numRooms; i++)
+   {
+      printf("--------------room name: %s\n", rooms[i].roomName);
+      printf("room type: %s\n", rooms[i].roomType);
+
+      int j;
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         printf("room connection %d: %s\n", j, rooms[i].connections[j]);
       }
    }
 }
@@ -303,12 +322,30 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
    // Now you have all the rooms connected.
    //
    // look for any open connections and connect them
+   // This is correct..
+
+   char availConnectedRoom[80];
+   for (i = 0; i < numRooms; i++)
+   {
+      if (strcmp(roomNames[i], "EMPTY") != 0)
+      {
+         //GetRandomElementFrom2D(80, roomNames, 7, 1, roomToConnectTo);
+         //GetRoomWithOpenConn(rooms, numRooms, availConnectedRoom);
+         //ConnectRooms(rooms, numRooms, roomToConnectTo, endRoomName);
+         AddElementToArrayByValue(80, connectedRoomNames, 7, roomNames[i]);
+         RemoveArrayElementByValue(80, roomNames, 7, roomNames[i]);
+
+         // just do 1 for now
+         break;
+      }
+   }
 
    // This is correct..
-   // for (i = 0; i < numRooms; i++)
-   // {
-   //    printf("connected rooms: %s\n", connectedRoomNames[i]);
-   // }
+   for (i = 0; i < numRooms; i++)
+   {
+      printf("connected rooms: %s\n", connectedRoomNames[i]);
+   }
+
    for (i = 0; i < numRooms; i++)
    {
       printf("unconnected rooms: %s\n", roomNames[i]);
@@ -328,6 +365,30 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
    }
 }
 
+void GetRoomWithOpenConn(struct Room rooms[], int numRooms, char *returnRoomName)
+{
+   // the PROBLEM here is that we do not know which rooms are connected..
+   int i;
+   for (i = 0; i < numRooms; i++)
+   {
+      printf("room name: %s\n", rooms[i].roomName);
+
+      int j;
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+         if (strcmp(rooms[i].connections[j], "OPEN") == 0)
+         {
+            strncpy(returnRoomName, rooms[i].roomName, 80);
+            return;
+         }
+      }
+   }
+
+   // Just in case, we dont have any open connections
+   returnRoomName = "EMPTY";
+}
+
 // Connects two rooms to each other
 void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char *roomForConnection)
 {
@@ -345,6 +406,13 @@ void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char
          // Look for an open connection
          for (j = 0; j < maxRoomConnections; j++)
          {
+            // Do not connect a room to itself
+            if (strcmp(rooms[i].connections[j], roomToConnectTo) == 0)
+            {
+               firstConnectionMade = 1;
+               break;
+            }
+
             // If here is already pre-existing connection then get out
             if (strcmp(rooms[i].connections[j], roomForConnection) == 0)
             {
@@ -377,6 +445,12 @@ void ConnectRooms(struct Room rooms[], int numRooms, char *roomToConnectTo, char
          // Look for an open connection
          for (j = 0; j < maxRoomConnections; j++)
          {
+            // Do not connect a room to itself
+            if (strcmp(rooms[i].connections[j], roomForConnection) == 0)
+            {
+               secondConnectionMade = 1;
+               break;
+            }
 
             // If here is already pre-existing connection then get out
             if (strcmp(rooms[i].connections[j], roomToConnectTo) == 0)
@@ -407,6 +481,12 @@ void AddElementToArrayByValue(int maxChar, char array[][maxChar], int arraySize,
    int i;
    for (i = 0; i < arraySize; i++)
    {
+      // If element is already in the array then do not add it.
+      if (strcmp(array[i], value) == 0)
+      {
+         return;
+      }
+
       if (strcmp(array[i], "EMPTY") == 0)
       {
          strncpy(array[i], value, maxChar);
@@ -473,13 +553,12 @@ void RemoveElementByValue(char **array, int arraySize, char *value)
 void GetRandomElementFrom2D(int maxChar, char array[][maxChar], int arraySize, int randomIncrement, char *returnValue)
 {
    int randomNumber = GenerateRandomNumber(0, arraySize - 1, randomIncrement);
-   int modValue = arraySize - 1;
 
    int i = 0;
    while (strcmp(array[randomNumber], "EMPTY") == 0)
    {
       i++;
-      randomNumber = (randomNumber + i) % modValue;
+      randomNumber = GenerateRandomNumber(0, arraySize - 1, i);
    }
 
    strncpy(returnValue, array[randomNumber], 80);
