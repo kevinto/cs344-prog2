@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 // Constant Declarations
 #define maxRoomNameLen 80
@@ -26,20 +27,117 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
 void GetRandomElementFrom2D(int maxChar, char array[][maxChar], int arraySize, int randomIncrement, char *returnValue);
 void RemoveElementByValue(char **array, int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
-void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
+void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar]);
 int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom);
 void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, int highPriorityRoomPos);
 void ClearRooms(struct Room rooms[], int maxRoomNumber);
 int ImproperConnections(struct Room rooms[], int maxRoomNumber);
+void LoadRooms(struct Room rooms[], int maxRoomNumber);
+void RemoveNewLineAndAddNullTerm(char *stringValue);
 
 // Program entry point
 int main()
 {
    GenerateRoomsDirectory();
    GenerateAllRoomFiles();
+
+   struct Room loadedRooms[7];
+   // TODO: Create an initilization procedure for loaded rooms to set all connections to CLOSED
+   LoadRooms(loadedRooms, 7);
 }
 
+void LoadRooms(struct Room rooms[], int maxRoomNumber)
+{
+   FILE *filePointer;
+   int i;
+   int j;
+   char fileName[80];
+   char roomName[80];
+   char directoryName[80];
+   GetRoomsDirName(directoryName, 80);
+   char roomNames[7][80];
+
+   // Get all the room names and save to an array
+   DIR *directoryPointer;
+   struct dirent *dir;
+   directoryPointer = opendir(directoryName);
+   if (directoryPointer)
+   {
+      i = 0;
+      while ((dir = readdir(directoryPointer)) != NULL)
+      {
+         if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0)
+         {
+            strncpy(roomNames[i], dir->d_name, 80);
+            i++;
+         }
+      }
+      closedir(directoryPointer);
+   }
+
+   char readString[200];
+   char saveString[80];
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      // Generate the file name
+      strncpy(fileName, directoryName, 80);
+      strcat(fileName, "/");
+      strncat(fileName, roomNames[i], 80);
+
+      // Load the room name to the struct
+      strncpy(rooms[i].roomName, roomNames[i], 80);
+
+      // Read from files and load into room struct
+      filePointer = fopen(fileName, "r");
+      while(fgets(readString, 200, filePointer)) 
+      {
+         if (strstr(readString, "CONNECTION") != NULL) {
+            strncpy(saveString, readString + 13, 80);
+            RemoveNewLineAndAddNullTerm(saveString);
+            printf("%s\n", saveString);
+            // Create a routine that adds the loaded connections to the correct connections
+         }
+      }
+
+      fclose(filePointer);
+   }
+
+   // Print out all the objects
+   // for (i = 0; i < maxRoomNumber; i++)
+   // {
+   //    printf("--------------room name: %s\n", rooms[i].roomName);
+   //    printf("room type: %s\n", rooms[i].roomType);
+   //    printf("open conn: %d\n", rooms[i].numOpenConnections);
+   //    printf("total conn: %d\n", rooms[i].totalRoomConnections);
+
+   //    for (j = 0; j < maxRoomConnections; j++)
+   //    {
+   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+   //    }
+   // }
+}
+
+void RemoveNewLineAndAddNullTerm(char *stringValue)
+{
+   size_t ln = strlen(stringValue) - 1;
+   if (stringValue[ln] == '\n')
+   {
+      stringValue[ln] = '\0';
+   }  
+}
+
+ /**************************************************************
+ * * Entry:
+ * *  n/a
+ * *
+ * * Exit:
+ * *  No return value
+ * *
+ * * Purpose:
+ * *  Creates the room directory
+ * *
+ * ***************************************************************/
 void GenerateRoomsDirectory()
 {
    char dirName[80];
@@ -76,10 +174,19 @@ void GetRoomsDirName(char *returnValue, int maxLen)
    strcat(directoryName, pidString);
 
    strncpy(returnValue, directoryName, maxLen);
-   //printf(" here\n");
 }
 
-// Creates empty room files only
+ /**************************************************************
+ * * Entry:
+ * *  n/a
+ * *
+ * * Exit:
+ * *  No return value
+ * *
+ * * Purpose:
+ * *  Generates the room files
+ * *
+ * ***************************************************************/
 void GenerateAllRoomFiles()
 {
    char directoryName[80];
@@ -132,20 +239,58 @@ void GenerateAllRoomFiles()
    // Create an array of structs
    struct Room rooms[7];
    InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
-   GenerateRoomConnections2(rooms, maxRoomNumber, 80, roomNames);
+   GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);
 
-   // TODO
-   // Check if there are any nodes with less than 2 connections
+   // Check if there are any nodes with less than 2 connections.
+   // If there are, redo all the connections
    while (ImproperConnections(rooms, maxRoomNumber) == 1)
    {
       ClearRooms(rooms, maxRoomNumber);
       InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
-      GenerateRoomConnections2(rooms, maxRoomNumber, 80, roomNames);  
-      printf("restarted\n");
+      GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);  
    }
 
+   // Create the files
+   int j;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      // Generate the file name
+      strncpy(fileName, directoryName, 80);
+      strcat(fileName, "/");
+      strncat(fileName, rooms[i].roomName, 80);
+     
+      // Create the files
+      filePointer = fopen(fileName, "w");
+      fprintf(filePointer, "ROOM NAME: %s\n", rooms[i].roomName);
+
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         if (strcmp(rooms[i].connections[j], "OPEN") == 0 || strcmp(rooms[i].connections[j], "CLOSED") == 0)
+         {
+            continue;
+         }
+
+         fprintf(filePointer, "CONNECTION %d: %s\n", j + 1, rooms[i].connections[j]);
+      }
+      fprintf(filePointer, "ROOM TYPE: %s\n", rooms[i].roomType);
+
+      fclose(filePointer);
+   }
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber  - the number of rooms in the room struct
+ * *
+ * * Exit:
+ * *  Return 1, if there are any rooms with incorrect connections.
+ * *  Return 0, if otherwise.
+ * *
+ * * Purpose:
+ * *  Checks if there are any rooms with less than 3 connections.
+ * *
+ * ***************************************************************/
 int ImproperConnections(struct Room rooms[], int maxRoomNumber)
 {
    int i;
@@ -162,6 +307,19 @@ int ImproperConnections(struct Room rooms[], int maxRoomNumber)
    return 0;
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber  - the number of rooms in the room struct
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Clears out all of the info in each room struct. This effectively
+ * *  resets all the rooms.
+ * *
+ * ***************************************************************/
 void ClearRooms(struct Room rooms[], int maxRoomNumber)
 {
    int i;
@@ -181,6 +339,21 @@ void ClearRooms(struct Room rooms[], int maxRoomNumber)
    }
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the number of rooms in the room struct
+ * *  maxChar - max number of characters in each room name
+ * *  roomNames - an array containing room names
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Sets a random start room and end room. Makes all other rooms mid
+ * *  rooms. Also Determines how many rooms each room can connect to, randomly.
+ * *
+ * ***************************************************************/
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar])
 {
    // Pick a starting room and an end room. Remember the start room
@@ -194,11 +367,12 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       endingRoomNumber = GenerateRandomNumber(1, 6, k);
    }
 
-   // Initiate the array of room structs
+   // Loop through all the rooms to set various properties 
    int randomNumber;
    int i;
    for (i = 0; i < maxRoomNumber; i++)
    {
+      // Assign the room name
       strncpy(rooms[i].roomName, roomNames[i], 80);
 
       // Assign the room types
@@ -239,7 +413,21 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
    }
 }
 
-void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar])
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the number of rooms in the room struct
+ * *  maxChar - max number of characters in each room name
+ * *  roomNames - an array containing room names
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Create a link between all the rooms
+ * *
+ * ***************************************************************/
+void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar])
 {
    // Connect all the rooms together. The order of rooms will be random in each run.
    // This first block of code will link all the rooms together, so that there will
@@ -275,23 +463,40 @@ void GenerateRoomConnections2(struct Room rooms[], int numRooms, int maxChar, ch
    }
 
    LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
-//-------------------------------------------------
-   // Print out all the objects
-   for (i = 0; i < numRooms; i++)
-   {
-      printf("--------------room name: %s\n", rooms[i].roomName);
-      printf("room type: %s\n", rooms[i].roomType);
-      printf("open conn: %d\n", rooms[i].numOpenConnections);
-      printf("total conn: %d\n", rooms[i].totalRoomConnections);
 
-      int j;
-      for (j = 0; j < maxRoomConnections; j++)
-      {
-         printf("room connection %d: %s\n", j, rooms[i].connections[j]);
-      }
-   }
+   // Print out all the objects
+   // for (i = 0; i < numRooms; i++)
+   // {
+   //    printf("--------------room name: %s\n", rooms[i].roomName);
+   //    printf("room type: %s\n", rooms[i].roomType);
+   //    printf("open conn: %d\n", rooms[i].numOpenConnections);
+   //    printf("total conn: %d\n", rooms[i].totalRoomConnections);
+
+   //    int j;
+   //    for (j = 0; j < maxRoomConnections; j++)
+   //    {
+   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+   //    }
+   // }
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the number of rooms in the room struct
+ * *  highPriorityRoom - room to link to other already linked rooms
+ * *  highPriorityRoomPos - position of the room to link in the room 
+ * *                        struct array
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Create a link between the specified room and a room that is 
+ * *  already linked to other rooms. This ensure that there will 
+ * *  not be isolated rooms
+ * *
+ * ***************************************************************/
 void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, int highPriorityRoomPos)
 {
    int i;
@@ -330,7 +535,6 @@ void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, 
 
    if (isAvailable == 1 && availRoomPos != -1)
    {
-      printf("%s is available to link to %s\n", highPriorityRoom, availableRoomName);
       // Connect available room to specified room
       for (i = 0; i < maxRoomConnections; i++)
       {
@@ -353,14 +557,28 @@ void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, 
          }
       }
    }
-
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the number of rooms in the room struct
+ * *  highPriorityRoom - holds the value of the highest priority
+ * *                     room to link
+ * *
+ * * Exit:
+ * *  Returns an int value of the position of the high priority 
+ * *  room in the rooms struct array
+ * *
+ * * Purpose:
+ * *  To find the next room to link. 
+ * *
+ * ***************************************************************/
 int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom)
 {
    int i;
 
-   // Only returns rooms with less than 3 connections
+   // Returns rooms with less than 3 connections
    for (i = 0; i < numRooms; i++)
    {
       if ((rooms[i].totalRoomConnections - rooms[i].numOpenConnections) < 3)
