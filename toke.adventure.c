@@ -35,6 +35,10 @@ void ClearRooms(struct Room rooms[], int maxRoomNumber);
 int ImproperConnections(struct Room rooms[], int maxRoomNumber);
 void LoadRooms(struct Room rooms[], int maxRoomNumber);
 void RemoveNewLineAndAddNullTerm(char *stringValue);
+void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber);
+void AddConnectionToRoom(struct Room rooms[], int roomPos, char *connToAdd);
+void DisplayRoomsStruct(struct Room rooms[], int maxRoomNumber);
+void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber);
 
 // Program entry point
 int main()
@@ -43,10 +47,34 @@ int main()
    GenerateAllRoomFiles();
 
    struct Room loadedRooms[7];
-   // TODO: Create an initilization procedure for loaded rooms to set all connections to CLOSED
+   InitializeEmptyRooms(loadedRooms, 7);
    LoadRooms(loadedRooms, 7);
+   ExecuteGameLoop(loadedRooms, 7);
+
+
+   //DisplayRoomsStruct(loadedRooms, 7);
 }
 
+void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
+{
+   // TODO:
+   // Game loop?
+   DisplayRoomsStruct(rooms, 7);
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Loads the rooms from the room's directory into the room's struct
+ * *  array.
+ * *
+ * ***************************************************************/
 void LoadRooms(struct Room rooms[], int maxRoomNumber)
 {
    FILE *filePointer;
@@ -92,32 +120,96 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
       filePointer = fopen(fileName, "r");
       while(fgets(readString, 200, filePointer)) 
       {
+         // Load the connections
          if (strstr(readString, "CONNECTION") != NULL) {
-            strncpy(saveString, readString + 13, 80);
+            strncpy(saveString, readString + 14, 80);
             RemoveNewLineAndAddNullTerm(saveString);
-            printf("%s\n", saveString);
-            // Create a routine that adds the loaded connections to the correct connections
+            AddConnectionToRoom(rooms, i, saveString);
+         }
+
+         // Load the room type
+         if (strstr(readString, "ROOM TYPE:") != NULL) {
+            strncpy(saveString, readString + 11, 80);
+            RemoveNewLineAndAddNullTerm(saveString);
+            strncpy(rooms[i].roomType, saveString, 80);
          }
       }
 
       fclose(filePointer);
    }
-
-   // Print out all the objects
-   // for (i = 0; i < maxRoomNumber; i++)
-   // {
-   //    printf("--------------room name: %s\n", rooms[i].roomName);
-   //    printf("room type: %s\n", rooms[i].roomType);
-   //    printf("open conn: %d\n", rooms[i].numOpenConnections);
-   //    printf("total conn: %d\n", rooms[i].totalRoomConnections);
-
-   //    for (j = 0; j < maxRoomConnections; j++)
-   //    {
-   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
-   //    }
-   // }
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Displays all the rooms in the rooms struct
+ * *
+ * ***************************************************************/
+void DisplayRoomsStruct(struct Room rooms[], int maxRoomNumber)
+{
+   // Print out all the objects
+   int i;
+   int j;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      printf("--------------room name: %s\n", rooms[i].roomName);
+      printf("room type: %s\n", rooms[i].roomType);
+      printf("open conn: %d\n", rooms[i].numOpenConnections);
+      printf("total conn: %d\n", rooms[i].totalRoomConnections);
+
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+      }
+   }
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  roomPos - the room position in the array
+ * *  connToAdd - the room to connect to's name
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Adds a connection to a room for a room loading procedure.
+ * *
+ * ***************************************************************/
+void AddConnectionToRoom(struct Room rooms[], int roomPos, char *connToAdd)
+{
+   int i;
+   for (i = 0; i < 6; i++)
+   {
+      // Add the connection if an unused connection is found
+      if (strcmp(rooms[roomPos].connections[i], "CLOSED") == 0)
+      {
+         strncpy(rooms[roomPos].connections[i], connToAdd, 80);
+         rooms[roomPos].totalRoomConnections++;
+         return;
+      }
+   }
+}
+
+/**************************************************************
+ * * Entry:
+ * *  stringValue - the string you want to transform
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Removes the new line character from the string and adds a null 
+ * *  terminator in its place.
+ * *
+ * ***************************************************************/
 void RemoveNewLineAndAddNullTerm(char *stringValue)
 {
    size_t ln = strlen(stringValue) - 1;
@@ -125,6 +217,38 @@ void RemoveNewLineAndAddNullTerm(char *stringValue)
    {
       stringValue[ln] = '\0';
    }  
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber  - the number of rooms in the room struct
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  For the rooms struct. Makes room name and room type into empty
+ * *  strings. Sets all int properties to 0. Sets all connections
+ * *  to closed.
+ * *
+ * ***************************************************************/
+void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber) 
+{
+   int i;
+   int j;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      strncpy(rooms[i].roomName, "", 80);
+      strncpy(rooms[i].roomType, "", 80);
+      rooms[i].numOpenConnections = 0;
+      rooms[i].totalRoomConnections = 0;
+
+      for (j = 0; j < maxRoomConnections; j++)
+      {
+         strncpy(rooms[i].connections[j], "CLOSED", 80);
+      }
+   }
 }
 
  /**************************************************************
