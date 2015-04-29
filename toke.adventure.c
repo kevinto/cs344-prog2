@@ -39,6 +39,8 @@ void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber);
 void AddConnectionToRoom(struct Room rooms[], int roomPos, char *connToAdd);
 void DisplayRoomsStruct(struct Room rooms[], int maxRoomNumber);
 void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber);
+void GetStartRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
+void DisplayCurrentRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
 
 // Program entry point
 int main()
@@ -51,7 +53,6 @@ int main()
    LoadRooms(loadedRooms, 7);
    ExecuteGameLoop(loadedRooms, 7);
 
-
    //DisplayRoomsStruct(loadedRooms, 7);
 }
 
@@ -59,7 +60,95 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
 {
    // TODO:
    // Game loop?
-   DisplayRoomsStruct(rooms, 7);
+   // int userWon = 0;
+   // while (userWon == 0)
+   // {
+
+   // }
+
+   char startRoomName[80];
+   GetStartRoom(rooms, maxRoomNumber, startRoomName);
+   DisplayCurrentRoom(rooms, maxRoomNumber, startRoomName);
+
+   // TODO: continue with the loop. make sure to add error checking for room names
+
+   // char userInput[80];
+   // printf("Please enter your name: ");
+   // fgets(userInput, 80, stdin);
+   // RemoveNewLineAndAddNullTerm(userInput);
+   // printf("your name is %s\n", userInput);
+   //DisplayRoomsStruct(rooms, 7);
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *  roomName - the room name
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Displays the output for the current room that is user is in.
+ * *
+ * ***************************************************************/
+void DisplayCurrentRoom(struct Room rooms[], int maxRoomNumber, char *roomName)
+{
+   // Loop through all the rooms
+   int i;
+   int j;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      // Output the specified room to the user
+      if (strcmp(rooms[i].roomName, roomName) == 0)
+      {
+         printf("CURRENT LOCATION: %s\n", rooms[i].roomName);
+         printf("POSSIBLE CONNECTIONS: ");
+
+         // Output the formatted room names
+         for (j = 0; j < rooms[i].totalRoomConnections; j++)
+         {
+            if (j == (rooms[i].totalRoomConnections - 1))
+            {
+               printf("%s.\n", rooms[i].connections[j]);
+            }
+            else
+            {
+               printf("%s, ", rooms[i].connections[j]);
+            }
+
+         }
+      }
+   }
+
+   printf("WHERE TO?>");
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *  startRoomName - variable to hold the return value, which is 
+ * *                  the starting room name
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Gets the starting room name
+ * *
+ * ***************************************************************/
+void GetStartRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName)
+{
+   int i;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      if (strcmp(rooms[i].roomType, "START_ROOM") == 0)
+      {
+         strncpy(startRoomName, rooms[i].roomName, 80);
+      }
+   }
 }
 
 /**************************************************************
@@ -369,6 +458,7 @@ void GenerateAllRoomFiles()
    // If there are, redo all the connections
    while (ImproperConnections(rooms, maxRoomNumber) == 1)
    {
+      printf("Rooms were connected incorrectly. Regenerating room connections. Please wait...\n");
       ClearRooms(rooms, maxRoomNumber);
       InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
       GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);  
