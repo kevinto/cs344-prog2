@@ -42,6 +42,9 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber);
 void GetStartRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
 void DisplayCurrentRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
 int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char *userInputRoomName);
+int IsEndRoom(struct Room rooms[], int maxRoomNumber, char *userInputRoomName);
+void OutputVictoryMessage(char *userStepsFileName, int numUserSteps);
+void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName);
 
 // Program entry point
 int main()
@@ -62,42 +65,119 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
    // TODO:
    // Game loop?
 
+   DisplayRoomsStruct(rooms, 7);
    char startRoomName[80];
    char currentRoomName[80];
    GetStartRoom(rooms, maxRoomNumber, startRoomName);
    strncpy(currentRoomName, startRoomName, 80);
 
+   char userStepsFileName[80];
+   strncpy(userStepsFileName, "tracker", 80);
+
    int userWon = 0;
+   int numUserSteps = 0;
    while (userWon == 0)
    {
       DisplayCurrentRoom(rooms, maxRoomNumber, currentRoomName);
-
-      // TODO: continue with the loop. make sure to add error checking for room names
 
       char userInput[80];
       fgets(userInput, 80, stdin);
       printf("\n");
       RemoveNewLineAndAddNullTerm(userInput);
 
-      // TODO this method is not done yet
-      // if !valid room name by checking the current room
+      // Check if the player made a valid move
       if (IsValidRoom(rooms, maxRoomNumber, currentRoomName, userInput) == 0)
       {
          continue;
       }
+
+      numUserSteps++;
+      strncpy(currentRoomName, userInput, 80);
+
+      AddRoomToTrackingFile(userStepsFileName, currentRoomName);
+
+      // if it is the end room
+      if (IsEndRoom(rooms, maxRoomNumber, userInput) == 1)
+      {
+         OutputVictoryMessage(userStepsFileName, numUserSteps);
+         userWon = 1;
+      }
+
+      // TODO: add room move tracking.
    }
 
-
-
-   // if it is the end room
-   // if not display the current room
-
-   //DisplayRoomsStruct(rooms, 7);
 }
 
+void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName)
+{
+   FILE *filePointer;
+
+   filePointer = fopen(userStepsFileName, "a");
+   fprintf(filePointer, "%s\n", currRoomName);
+   fclose(filePointer);
+
+   // Make sure to clean up the file
+}
+
+void OutputVictoryMessage(char *userStepsFileName, int numUserSteps)
+{
+   printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
+   printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", numUserSteps);
+
+   // FILE *filePointer;
+
+   // filePointer = fopen(userStepsFileName, "r");
+   // fclose(filePointer);
+
+   // Make sure to clean up the file
+}
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *  userInputRoomName - room you want to check if end room
+ * *
+ * * Exit:
+ * *  Returns 0, if room is not end room.
+ * *  Returns 1, if room is end room. 
+ * *
+ * * Purpose:
+ * *  Checks if the user inputed room is the end room.
+ * *
+ * ***************************************************************/
+int IsEndRoom(struct Room rooms[], int maxRoomNumber, char *userInputRoomName)
+{
+   int i;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      if (strcmp(rooms[i].roomName, userInputRoomName) == 0 && strcmp(rooms[i].roomType, "END_ROOM") == 0)
+      {
+         return 1; // Return True, this is the end room.
+      }
+   }
+
+   return 0; // Return False, this is not the end room.
+}
+
+
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *  currRoomName - the current room name
+ * *  userInputRoomName - the room the user wants to go to
+ * *
+ * * Exit:
+ * *  Returns 0, if user inputed a invalid room.
+ * *  Returns 1, if user inputed a valid room.
+ * *
+ * * Purpose:
+ * *  Checks if the user inputed room is reach able from the current room.
+ * *
+ * ***************************************************************/
 int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char *userInputRoomName)
 {
-   // Print out all the objects
    int i;
    int j;
 
@@ -111,23 +191,35 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
       }
    }
 
-   if (roomExists == 0)
+   // Check if user inputed room is reachable
+   int connectionPossible = 0;
+   for (i = 0; i < maxRoomNumber; i++)
    {
-      printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
-      return 0;
+      if (strcmp(rooms[i].roomName, currRoomName) == 0)
+      {
+         for (j = 0; j < maxRoomConnections; j++)
+         {
+            if (strcmp(rooms[i].connections[j], userInputRoomName) == 0)
+            {
+               connectionPossible = 1;
+               break;
+            }
+         }
+      }
    }
 
-   // looks like i have to use another loop to check if this room is a valid connection
-   // for (i = 0; i < maxRoomNumber; i++)
-   // {
-   //    if (strcmp(rooms.roomName[i], currRoomName))
-
-   //    for (j = 0; j < maxRoomConnections; j++)
-   //    {
-   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
-   //    }
-   // }
-   return 1;
+   // Output an error message if:
+   //   1. Room is not a real room.
+   //   2. Room cannot be reached because it is not connected to the 
+   //      current room.
+   //   3. Room you are trying to reach is the current room.
+   if (roomExists == 0 || connectionPossible == 0)
+   {
+      printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
+      return 0; // Means false, this is a an invalid room.
+   }
+  
+   return 1; // Means true, this is a valid room.
 }
 
 /**************************************************************
