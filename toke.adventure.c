@@ -100,6 +100,8 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
    // Print out all the objects
    int i;
    int j;
+
+   // Check if this is an actual room
    int roomExists = 0;
    for (i = 0; i < maxRoomNumber; i++)
    {
@@ -115,6 +117,7 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
       return 0;
    }
 
+   // looks like i have to use another loop to check if this room is a valid connection
    // for (i = 0; i < maxRoomNumber; i++)
    // {
    //    if (strcmp(rooms.roomName[i], currRoomName))
