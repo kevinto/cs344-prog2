@@ -41,6 +41,7 @@ void DisplayRoomsStruct(struct Room rooms[], int maxRoomNumber);
 void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber);
 void GetStartRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
 void DisplayCurrentRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName);
+int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char *userInputRoomName);
 
 // Program entry point
 int main()
@@ -60,24 +61,70 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
 {
    // TODO:
    // Game loop?
-   // int userWon = 0;
-   // while (userWon == 0)
-   // {
-
-   // }
 
    char startRoomName[80];
+   char currentRoomName[80];
    GetStartRoom(rooms, maxRoomNumber, startRoomName);
-   DisplayCurrentRoom(rooms, maxRoomNumber, startRoomName);
+   strncpy(currentRoomName, startRoomName, 80);
 
-   // TODO: continue with the loop. make sure to add error checking for room names
+   int userWon = 0;
+   while (userWon == 0)
+   {
+      DisplayCurrentRoom(rooms, maxRoomNumber, currentRoomName);
 
-   // char userInput[80];
-   // printf("Please enter your name: ");
-   // fgets(userInput, 80, stdin);
-   // RemoveNewLineAndAddNullTerm(userInput);
-   // printf("your name is %s\n", userInput);
+      // TODO: continue with the loop. make sure to add error checking for room names
+
+      char userInput[80];
+      fgets(userInput, 80, stdin);
+      printf("\n");
+      RemoveNewLineAndAddNullTerm(userInput);
+
+      // TODO this method is not done yet
+      // if !valid room name by checking the current room
+      if (IsValidRoom(rooms, maxRoomNumber, currentRoomName, userInput) == 0)
+      {
+         continue;
+      }
+   }
+
+
+
+   // if it is the end room
+   // if not display the current room
+
    //DisplayRoomsStruct(rooms, 7);
+}
+
+int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char *userInputRoomName)
+{
+   // Print out all the objects
+   int i;
+   int j;
+   int roomExists = 0;
+   for (i = 0; i < maxRoomNumber; i++)
+   {
+      if (strcmp(rooms[i].roomName, userInputRoomName) == 0)
+      {
+         roomExists = 1;
+      }
+   }
+
+   if (roomExists == 0)
+   {
+      printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
+      return 0;
+   }
+
+   // for (i = 0; i < maxRoomNumber; i++)
+   // {
+   //    if (strcmp(rooms.roomName[i], currRoomName))
+
+   //    for (j = 0; j < maxRoomConnections; j++)
+   //    {
+   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
+   //    }
+   // }
+   return 1;
 }
 
 /**************************************************************
