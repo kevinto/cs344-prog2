@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -57,22 +58,37 @@ int main()
    LoadRooms(loadedRooms, 7);
    ExecuteGameLoop(loadedRooms, 7);
 
+   exit(EXIT_SUCCESS);
    //DisplayRoomsStruct(loadedRooms, 7);
 }
 
+/**************************************************************
+ * * Entry:
+ * *  rooms - an array of room structs
+ * *  maxRoomNumber - the max number of rooms
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Runs the game loop for the user.
+ * *
+ * ***************************************************************/
 void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
 {
-   // TODO:
-   // Game loop?
-
-   DisplayRoomsStruct(rooms, 7);
+   // Get the start room
    char startRoomName[80];
    char currentRoomName[80];
    GetStartRoom(rooms, maxRoomNumber, startRoomName);
    strncpy(currentRoomName, startRoomName, 80);
 
+   // Construct the tracker file name
+   char directoryName[80];
+   GetRoomsDirName(directoryName, 80);
    char userStepsFileName[80];
-   strncpy(userStepsFileName, "tracker", 80);
+   strncpy(userStepsFileName, directoryName, 80);
+   strcat(userStepsFileName, "/");
+   strncat(userStepsFileName, "tracker", 80);
 
    int userWon = 0;
    int numUserSteps = 0;
@@ -80,6 +96,7 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
    {
       DisplayCurrentRoom(rooms, maxRoomNumber, currentRoomName);
 
+      // Get user room name input
       char userInput[80];
       fgets(userInput, 80, stdin);
       printf("\n");
@@ -91,23 +108,35 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
          continue;
       }
 
-      numUserSteps++;
+      // Set the current room to what the user entered
       strncpy(currentRoomName, userInput, 80);
 
+      // Track the user's movements
+      numUserSteps++;
       AddRoomToTrackingFile(userStepsFileName, currentRoomName);
 
-      // if it is the end room
+      // Check if user arrived at the end room
       if (IsEndRoom(rooms, maxRoomNumber, userInput) == 1)
       {
          OutputVictoryMessage(userStepsFileName, numUserSteps);
          userWon = 1;
       }
-
-      // TODO: add room move tracking.
    }
 
 }
 
+/**************************************************************
+ * * Entry:
+ * *  userStepsFileName - the file name of the steps tracker
+ * *  currRoomName - the current room name
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Adds the current room name to the tracker file.
+ * *
+ * ***************************************************************/
 void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName)
 {
    FILE *filePointer;
@@ -115,21 +144,41 @@ void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName)
    filePointer = fopen(userStepsFileName, "a");
    fprintf(filePointer, "%s\n", currRoomName);
    fclose(filePointer);
-
-   // Make sure to clean up the file
 }
 
+/**************************************************************
+ * * Entry:
+ * *  userStepsFileName - the file name of the steps tracker
+ * *  numUserSteps - the number of steps the user took to victory
+ * *
+ * * Exit:
+ * *  n/a
+ * *
+ * * Purpose:
+ * *  Outputs the victory message.
+ * *
+ * ***************************************************************/
 void OutputVictoryMessage(char *userStepsFileName, int numUserSteps)
 {
+   // Output victory message and number of steps
    printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
    printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", numUserSteps);
 
-   // FILE *filePointer;
+   // Print out the contents of the tracker file
+   FILE *filePointer;
+   filePointer = fopen(userStepsFileName, "r");
+   if (filePointer) 
+   {
+      int character;
+      while ((character = getc(filePointer)) != EOF)
+      {
+         putchar(character);
+      }
+      fclose(filePointer);
 
-   // filePointer = fopen(userStepsFileName, "r");
-   // fclose(filePointer);
-
-   // Make sure to clean up the file
+      // Clean up the temp tracker file
+      remove(userStepsFileName);
+   }
 }
 
 /**************************************************************
@@ -159,7 +208,6 @@ int IsEndRoom(struct Room rooms[], int maxRoomNumber, char *userInputRoomName)
 
    return 0; // Return False, this is not the end room.
 }
-
 
 /**************************************************************
  * * Entry:
@@ -819,21 +867,6 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
    }
 
    LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
-
-   // Print out all the objects
-   // for (i = 0; i < numRooms; i++)
-   // {
-   //    printf("--------------room name: %s\n", rooms[i].roomName);
-   //    printf("room type: %s\n", rooms[i].roomType);
-   //    printf("open conn: %d\n", rooms[i].numOpenConnections);
-   //    printf("total conn: %d\n", rooms[i].totalRoomConnections);
-
-   //    int j;
-   //    for (j = 0; j < maxRoomConnections; j++)
-   //    {
-   //       printf("room connection %d: %s\n", j, rooms[i].connections[j]);
-   //    }
-   // }
 }
 
 /**************************************************************
