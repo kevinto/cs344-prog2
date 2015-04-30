@@ -1,3 +1,11 @@
+/**************************************************************
+ * *  Filename: toke.adventure.c 
+ * *  Coded by: Kevin To
+ * *  Purpose - Lets a user play a game where they spawn in a room
+ * *            and have to navigate to a specific room to win.
+ * *
+ * ***************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,16 +58,20 @@ void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName);
 // Program entry point
 int main()
 {
+   // Create all the room files
    GenerateRoomsDirectory();
    GenerateAllRoomFiles();
 
+   // Load the room files into memory and play the game
    struct Room loadedRooms[7];
    InitializeEmptyRooms(loadedRooms, 7);
    LoadRooms(loadedRooms, 7);
    ExecuteGameLoop(loadedRooms, 7);
 
    exit(EXIT_SUCCESS);
-   //DisplayRoomsStruct(loadedRooms, 7);
+
+   // This is a test method to output all the rooms struct
+   // DisplayRoomsStruct(loadedRooms, 7);
 }
 
 /**************************************************************
