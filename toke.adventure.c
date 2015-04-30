@@ -356,21 +356,18 @@ void GetStartRoom(struct Room rooms[], int maxRoomNumber, char *startRoomName)
  * ***************************************************************/
 void LoadRooms(struct Room rooms[], int maxRoomNumber)
 {
-   FILE *filePointer;
    int i;
-   int j;
    char fileName[80];
-   char roomName[80];
    char directoryName[80];
    GetRoomsDirName(directoryName, 80);
    char roomNames[7][80];
 
    // Get all the room names and save to an array
    DIR *directoryPointer;
-   struct dirent *dir;
    directoryPointer = opendir(directoryName);
    if (directoryPointer)
    {
+      struct dirent *dir;
       i = 0;
       while ((dir = readdir(directoryPointer)) != NULL)
       {
@@ -387,6 +384,7 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
    char saveString[80];
    for (i = 0; i < maxRoomNumber; i++)
    {
+      FILE *filePointer;
       // Generate the file name
       strncpy(fileName, directoryName, 80);
       strcat(fileName, "/");
