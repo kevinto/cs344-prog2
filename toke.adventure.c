@@ -33,13 +33,10 @@ void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
 void GetRandomElement(char **array, int arraySize, int randomIncrement, char *returnValue);
-void GetRandomElementFrom2D(int maxChar, char array[][maxChar], int arraySize, int randomIncrement, char *returnValue);
 void RemoveElementByValue(char **array, int arraySize, char *value);
 void GetRoomsDirName(char *returnValue, int maxLen);
 void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar]);
 void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, char roomNames[][maxChar]);
-int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom);
-void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, int highPriorityRoomPos);
 void ClearRooms(struct Room rooms[], int maxRoomNumber);
 int ImproperConnections(struct Room rooms[], int maxRoomNumber);
 void LoadRooms(struct Room rooms[], int maxRoomNumber);
@@ -54,6 +51,7 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
 int IsEndRoom(struct Room rooms[], int maxRoomNumber, char *userInputRoomName);
 void OutputVictoryMessage(char *userStepsFileName, int numUserSteps);
 void AddRoomToTrackingFile(char *userStepsFileName, char *currRoomName);
+int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToConnectToPos);
 
 // Program entry point
 int main()
@@ -649,7 +647,7 @@ void GenerateAllRoomFiles()
       fclose(filePointer);
    }
 
-   // Create an array of structs
+   // Create an array of structs and try to generate room connections
    struct Room rooms[7];
    InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
    GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);
@@ -658,11 +656,12 @@ void GenerateAllRoomFiles()
    // If there are, redo all the connections
    while (ImproperConnections(rooms, maxRoomNumber) == 1)
    {
-      printf("Rooms were connected incorrectly. Regenerating room connections. Please wait...\n");
       ClearRooms(rooms, maxRoomNumber);
       InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
       GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);  
    }
+
+   // DisplayRoomsStruct(rooms, 7); // For debugging
 
    // Create the files
    int j;
@@ -843,52 +842,45 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
  * ***************************************************************/
 void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, char roomNames[][maxChar])
 {
-   // Connect all the rooms together. The order of rooms will be random in each run.
-   // This first block of code will link all the rooms together, so that there will
-   // be a path through all the rooms.
+   int whileSafeGuard = 0;
+   int randomNumber;
    int i;
+
+   // For each room randomly connect to available rooms
    for (i = 0; i < numRooms; i++)
    {
-      // Decrement the number tracking the current room's open connections
-      // by two because we are creating a both through all rooms; which
-      // require two connections.
-      rooms[i].numOpenConnections -= 2;
+      randomNumber = GenerateRandomNumber(0, 6, i);
 
-      // Connect the current room with the next room
-      strncpy(rooms[i].connections[0], rooms[(i + 1) % numRooms].roomName, 80);
-
-      // Connect the current room to the previous room
-      if (i == 0)
+      // While the current room has available connections, try to 
+      // connect it to other rooms. Try 1000 times before giving up.
+      whileSafeGuard = 0;
+      while (rooms[i].numOpenConnections > 0)
       {
-         // The first room must connect to the last room
-         strncpy(rooms[i].connections[1], rooms[numRooms - 1].roomName, 80);
-         continue;
+         if (ConnectRooms(rooms, 7, i, randomNumber) == 0)
+         {
+            randomNumber = GenerateRandomNumber(0, 6, whileSafeGuard);
+         }
+
+         whileSafeGuard++;
+         if (whileSafeGuard == 1000)
+         {
+            break;
+         }
       }
-      strncpy(rooms[i].connections[1], rooms[(i - 1) % numRooms].roomName, 80);
    }
-
-   // Connect any rooms with open connections to any available rooms
-   int highPriorityRoomPos = 0;
-   char highPriorityRoom[80];
-   for (i = 0; i < 20; i++)
-   {
-      highPriorityRoomPos = FindHighPriorityRoom(rooms, numRooms, highPriorityRoom); // need to add more priorities
-      LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
-   }
-
-   LinkRoomToGraph(rooms, numRooms, highPriorityRoom, highPriorityRoomPos);
 }
 
 /**************************************************************
  * * Entry:
  * *  rooms - an array of room structs
  * *  maxRoomNumber - the number of rooms in the room struct
- * *  highPriorityRoom - room to link to other already linked rooms
- * *  highPriorityRoomPos - position of the room to link in the room 
- * *                        struct array
+ * *  currRoomPos - the current room's position in the room's struct
+ * *  roomToConnectToPos - the room to connect to's position in the rooms 
+ * *                       struct
  * *
  * * Exit:
- * *  n/a
+ * *  Return 0, if unable to connect both rooms
+ * *  Return 1, if able to connect both rooms
  * *
  * * Purpose:
  * *  Create a link between the specified room and a room that is 
@@ -896,104 +888,51 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
  * *  not be isolated rooms
  * *
  * ***************************************************************/
-void LinkRoomToGraph(struct Room rooms[], int numRooms, char *highPriorityRoom, int highPriorityRoomPos)
-{
+int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToConnectToPos)
+{ 
    int i;
    int j;
-   char availableRoomName[80];
-   int isAvailable = 1;
-   int availRoomPos = -1;
-   for (i = 0; i < numRooms; i++)
+
+   // Do not connect the same room
+   if (currRoomPos == roomToConnectToPos)
    {
-      isAvailable = 1;
+      return 0;
+   }
 
-      // Go to next room if the current room has no open connections or is the same as 
-      // the room we want to connect
-      if (rooms[i].numOpenConnections == 0 || strcmp(rooms[i].roomName, highPriorityRoom) == 0)
+   // Do not connect to room with no connections
+   if (rooms[roomToConnectToPos].numOpenConnections == 0 || rooms[currRoomPos].numOpenConnections == 0)
+   {
+      return 0;
+   }
+
+   // Do not connect to room that is already connected
+   for (j = 0; j < maxRoomConnections; j++)
+   {
+      if (strcmp(rooms[roomToConnectToPos].connections[j], rooms[currRoomPos].roomName) == 0)
       {
-         continue;
+         return 0;
       }
+   }
 
-      // Check if the current room's room connections already contain the room we want to add.
-      for (j = 0; j < maxRoomConnections; j++)
+   // Connect available room to specified room
+   for (i = 0; i < maxRoomConnections; i++)
+   {
+      if (strcmp(rooms[currRoomPos].connections[i], "OPEN") == 0)
       {
-         if (strcmp(rooms[i].connections[j], highPriorityRoom) == 0)
-         {
-            isAvailable = 0;
-         }
-      }
-
-      // Check if current room is available to link to the specified room
-      if (isAvailable == 1)
-      {
-         availRoomPos = i;
-         strncpy(availableRoomName, rooms[i].roomName, 80);
+         rooms[currRoomPos].numOpenConnections--;
+         strncpy(rooms[currRoomPos].connections[i], rooms[roomToConnectToPos].roomName, 80);
          break;
       }
    }
 
-   if (isAvailable == 1 && availRoomPos != -1)
+   // Connect specified room to available room
+   for (i = 0; i < maxRoomConnections; i++)
    {
-      // Connect available room to specified room
-      for (i = 0; i < maxRoomConnections; i++)
+      if (strcmp(rooms[roomToConnectToPos].connections[i], "OPEN") == 0)
       {
-         if (strcmp(rooms[availRoomPos].connections[i], "OPEN") == 0)
-         {
-            rooms[availRoomPos].numOpenConnections--;
-            strncpy(rooms[availRoomPos].connections[i], highPriorityRoom, 80);
-            break;
-         }
-      }
-
-      // Connect specified room to available room
-      for (i = 0; i < maxRoomConnections; i++)
-      {
-         if (strcmp(rooms[highPriorityRoomPos].connections[i], "OPEN") == 0)
-         {
-            rooms[highPriorityRoomPos].numOpenConnections--;
-            strncpy(rooms[highPriorityRoomPos].connections[i], availableRoomName, 80);
-            break;
-         }
-      }
-   }
-}
-
-/**************************************************************
- * * Entry:
- * *  rooms - an array of room structs
- * *  maxRoomNumber - the number of rooms in the room struct
- * *  highPriorityRoom - holds the value of the highest priority
- * *                     room to link
- * *
- * * Exit:
- * *  Returns an int value of the position of the high priority 
- * *  room in the rooms struct array
- * *
- * * Purpose:
- * *  To find the next room to link. 
- * *
- * ***************************************************************/
-int FindHighPriorityRoom(struct Room rooms[], int numRooms, char *highPriorityRoom)
-{
-   int i;
-
-   // Returns rooms with less than 3 connections
-   for (i = 0; i < numRooms; i++)
-   {
-      if ((rooms[i].totalRoomConnections - rooms[i].numOpenConnections) < 3)
-      {
-         strcpy(highPriorityRoom, rooms[i].roomName);
-         return i;
-      }
-   }
-
-   // Returns rooms with any open connections
-   for (i = 0; i < numRooms; i++)
-   {
-      if (rooms[i].numOpenConnections > 1)
-      {
-         strcpy(highPriorityRoom, rooms[i].roomName);
-         return i;
+         rooms[roomToConnectToPos].numOpenConnections--;
+         strncpy(rooms[roomToConnectToPos].connections[i], rooms[currRoomPos].roomName, 80);
+         break;
       }
    }
 }
@@ -1022,36 +961,6 @@ void RemoveElementByValue(char **array, int arraySize, char *value)
          array[i] = "EMPTY";
       }
    }
-}
-
-/**************************************************************
- * * Entry:
- * *	array  - an array of strings. This function will ignore all
- * *             elements with the value of "EMPTY"
- * *	arraySize  - the size of the array
- * *	randomIncrement - offset to make the function generate a 
- * *                      different random number when this function
- * *                      is being used in a loop.
- * *
- * * Exit:
- * *	Returns a random string from a string array.
- * *
- * * Purpose:
- * *	To get a random string from a string array.
- * *
- * ***************************************************************/
-void GetRandomElementFrom2D(int maxChar, char array[][maxChar], int arraySize, int randomIncrement, char *returnValue)
-{
-   int randomNumber = GenerateRandomNumber(0, arraySize - 1, randomIncrement);
-
-   int i = 0;
-   while (strcmp(array[randomNumber], "EMPTY") == 0)
-   {
-      i++;
-      randomNumber = GenerateRandomNumber(0, arraySize - 1, i);
-   }
-
-   strncpy(returnValue, array[randomNumber], 80);
 }
 
 /**************************************************************
