@@ -12,7 +12,7 @@ PROG1 = a
 PROGS = ${PROG1}
 
 default:
-	${CXX} ${SRCS} -o ${PROG1}
+	${CXX} ${SRCS} -g -Wall -o ${PROG1}
 
 clean:
 	rm -rf ${PROGS} *.o *~ *rooms*

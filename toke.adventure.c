@@ -1,5 +1,5 @@
 /**************************************************************
- * *  Filename: toke.adventure.c 
+ * *  Filename: toke.adventure.c
  * *  Coded by: Kevin To
  * *  Purpose - Lets a user play a game where they spawn in a room
  * *            and have to navigate to a specific room to win.
@@ -12,13 +12,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <time.h>
+
 
 // Constant Declarations
 #define maxRoomNameLen 80
-#define maxRoomConnections 6 
+#define maxRoomConnections 6
 
 // Struct Declarations
-struct Room 
+struct Room
 {
    char roomName[maxRoomNameLen];
    char connections[maxRoomConnections][maxRoomNameLen];
@@ -29,6 +32,7 @@ struct Room
 struct stat st = {0};
 
 // Function Declarations
+pid_t getpid(void);
 void GenerateRoomsDirectory();
 void GenerateAllRoomFiles();
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet);
@@ -177,7 +181,7 @@ void OutputVictoryMessage(char *userStepsFileName, int numUserSteps)
    // Print out the contents of the tracker file
    FILE *filePointer;
    filePointer = fopen(userStepsFileName, "r");
-   if (filePointer) 
+   if (filePointer)
    {
       int character;
       while ((character = getc(filePointer)) != EOF)
@@ -199,7 +203,7 @@ void OutputVictoryMessage(char *userStepsFileName, int numUserSteps)
  * *
  * * Exit:
  * *  Returns 0, if room is not end room.
- * *  Returns 1, if room is end room. 
+ * *  Returns 1, if room is end room.
  * *
  * * Purpose:
  * *  Checks if the user inputed room is the end room.
@@ -268,7 +272,7 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
 
    // Output an error message if:
    //   1. Room is not a real room.
-   //   2. Room cannot be reached because it is not connected to the 
+   //   2. Room cannot be reached because it is not connected to the
    //      current room.
    //   3. Room you are trying to reach is the current room.
    if (roomExists == 0 || connectionPossible == 0)
@@ -276,7 +280,7 @@ int IsValidRoom(struct Room rooms[], int maxRoomNumber, char *currRoomName, char
       printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
       return 0; // Means false, this is a an invalid room.
    }
-  
+
    return 1; // Means true, this is a valid room.
 }
 
@@ -329,7 +333,7 @@ void DisplayCurrentRoom(struct Room rooms[], int maxRoomNumber, char *roomName)
  * * Entry:
  * *  rooms - an array of room structs
  * *  maxRoomNumber - the max number of rooms
- * *  startRoomName - variable to hold the return value, which is 
+ * *  startRoomName - variable to hold the return value, which is
  * *                  the starting room name
  * *
  * * Exit:
@@ -405,7 +409,7 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
 
       // Read from files and load into room struct
       filePointer = fopen(fileName, "r");
-      while(fgets(readString, 200, filePointer)) 
+      while(fgets(readString, 200, filePointer))
       {
          // Load the connections
          if (strstr(readString, "CONNECTION") != NULL) {
@@ -493,7 +497,7 @@ void AddConnectionToRoom(struct Room rooms[], int roomPos, char *connToAdd)
  * *  n/a
  * *
  * * Purpose:
- * *  Removes the new line character from the string and adds a null 
+ * *  Removes the new line character from the string and adds a null
  * *  terminator in its place.
  * *
  * ***************************************************************/
@@ -503,7 +507,7 @@ void RemoveNewLineAndAddNullTerm(char *stringValue)
    if (stringValue[ln] == '\n')
    {
       stringValue[ln] = '\0';
-   }  
+   }
 }
 
 /**************************************************************
@@ -520,7 +524,7 @@ void RemoveNewLineAndAddNullTerm(char *stringValue)
  * *  to closed.
  * *
  * ***************************************************************/
-void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber) 
+void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber)
 {
    int i;
    int j;
@@ -553,7 +557,7 @@ void GenerateRoomsDirectory()
 {
    char dirName[80];
    GetRoomsDirName(dirName, 80);
-  
+
    // Create rooms directory
    if (stat(dirName, &st) == -1)
    {
@@ -605,10 +609,10 @@ void GenerateAllRoomFiles()
 
    // Create room files
    FILE *filePointer;
-   
-   // Array of possible room names 
+
+   // Array of possible room names
    int numPossibleRoomNames = 10;
-   char *possibleRoomNames[10] = 
+   char *possibleRoomNames[10] =
    {
       "alpha", "cinna",
       "earth", "haven",
@@ -622,10 +626,10 @@ void GenerateAllRoomFiles()
    char roomNames[7][80];
 
    // Explanation of how the room algorithm works:
-   //  For each element in the rooms array we are going to 
-   //  find a random element in the possible rooms array. Once 
-   //  the random string is found we remove that string from the 
-   //  possible rooms list and add it to the rooms array. Each new 
+   //  For each element in the rooms array we are going to
+   //  find a random element in the possible rooms array. Once
+   //  the random string is found we remove that string from the
+   //  possible rooms list and add it to the rooms array. Each new
    //  possible room query will only return a random element from
    //  what is left in the possible room array.
    int i = 0;
@@ -641,7 +645,7 @@ void GenerateAllRoomFiles()
       strncpy(fileName, directoryName, 80);
       strcat(fileName, "/");
       strncat(fileName, roomName, 80);
-     
+
       // Create the files
       filePointer = fopen(fileName, "w");
       fclose(filePointer);
@@ -658,7 +662,7 @@ void GenerateAllRoomFiles()
    {
       ClearRooms(rooms, maxRoomNumber);
       InitializeRoomsArray(rooms, maxRoomNumber, 80, roomNames);
-      GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);  
+      GenerateRoomConnections(rooms, maxRoomNumber, 80, roomNames);
    }
 
    // DisplayRoomsStruct(rooms, 7); // For debugging
@@ -671,7 +675,7 @@ void GenerateAllRoomFiles()
       strncpy(fileName, directoryName, 80);
       strcat(fileName, "/");
       strncat(fileName, rooms[i].roomName, 80);
-     
+
       // Create the files
       filePointer = fopen(fileName, "w");
       fprintf(filePointer, "ROOM NAME: %s\n", rooms[i].roomName);
@@ -716,7 +720,7 @@ int ImproperConnections(struct Room rooms[], int maxRoomNumber)
          return 1;
       }
    }
-   
+
    return 0;
 }
 
@@ -780,7 +784,7 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       endingRoomNumber = GenerateRandomNumber(1, 6, k);
    }
 
-   // Loop through all the rooms to set various properties 
+   // Loop through all the rooms to set various properties
    int randomNumber;
    int i;
    for (i = 0; i < maxRoomNumber; i++)
@@ -797,12 +801,12 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       {
          strncpy(rooms[i].roomType, "END_ROOM", 80);
       }
-      else 
+      else
       {
          strncpy(rooms[i].roomType, "MID_ROOM", 80);
       }
 
-      // Assign a random number of open connections. This means how 
+      // Assign a random number of open connections. This means how
       // many rooms the current room can connect to.
       int j;
       randomNumber = GenerateRandomNumber(3, 6, i);
@@ -813,7 +817,7 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       rooms[i].numOpenConnections = randomNumber;
       rooms[i].totalRoomConnections = randomNumber;
 
-      // Close all of the room connections that arent open 
+      // Close all of the room connections that arent open
       // to any other rooms
       int k;
       for (k = 0; k < maxRoomConnections; k++)
@@ -851,11 +855,12 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
    {
       randomNumber = GenerateRandomNumber(0, 6, i);
 
-      // While the current room has available connections, try to 
+      // While the current room has available connections, try to
       // connect it to other rooms. Try 1000 times before giving up.
       whileSafeGuard = 0;
       while (rooms[i].numOpenConnections > 0)
       {
+         // If connecting to rooms fail, regenerate a random number and try again
          if (ConnectRooms(rooms, 7, i, randomNumber) == 0)
          {
             randomNumber = GenerateRandomNumber(0, 6, whileSafeGuard);
@@ -875,7 +880,7 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
  * *  rooms - an array of room structs
  * *  maxRoomNumber - the number of rooms in the room struct
  * *  currRoomPos - the current room's position in the room's struct
- * *  roomToConnectToPos - the room to connect to's position in the rooms 
+ * *  roomToConnectToPos - the room to connect to's position in the rooms
  * *                       struct
  * *
  * * Exit:
@@ -883,13 +888,13 @@ void GenerateRoomConnections(struct Room rooms[], int numRooms, int maxChar, cha
  * *  Return 1, if able to connect both rooms
  * *
  * * Purpose:
- * *  Create a link between the specified room and a room that is 
- * *  already linked to other rooms. This ensure that there will 
+ * *  Create a link between the specified room and a room that is
+ * *  already linked to other rooms. This ensure that there will
  * *  not be isolated rooms
  * *
  * ***************************************************************/
 int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToConnectToPos)
-{ 
+{
    int i;
    int j;
 
@@ -935,11 +940,13 @@ int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToC
          break;
       }
    }
+
+   return 1;
 }
 
  /**************************************************************
  * * Entry:
- * *	array  - an array of strings 
+ * *	array  - an array of strings
  * *	arraySize  - the size of the array
  * *	value - the string value you want to replace with "EMPTY"
  * *
@@ -947,10 +954,10 @@ int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToC
  * *	No return value
  * *
  * * Purpose:
- * *	To find the specified string in the array and replace it 
+ * *	To find the specified string in the array and replace it
  * *    with "EMPTY"
  * *
- * ***************************************************************/    
+ * ***************************************************************/
 void RemoveElementByValue(char **array, int arraySize, char *value)
 {
    int i = 0;
@@ -968,7 +975,7 @@ void RemoveElementByValue(char **array, int arraySize, char *value)
  * *	array  - an array of strings. This function will ignore all
  * *             elements with the value of "EMPTY"
  * *	arraySize  - the size of the array
- * *	randomIncrement - offset to make the function generate a 
+ * *	randomIncrement - offset to make the function generate a
  * *                      different random number when this function
  * *                      is being used in a loop.
  * *
@@ -997,7 +1004,7 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
  * * Entry:
  * *	minNumber - the minimum random number
  * *	maxNumber - the maximum random number
- * *	timeOffSet - offset to make the function generate a 
+ * *	timeOffSet - offset to make the function generate a
  * *                 different random number when this function
  * *                 is being used in a loop.
  * *
@@ -1010,7 +1017,7 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
  * ***************************************************************/
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet)
 {
-	
+
    // Set seed of random number to make number more random.
    srand(time(0) + timeOffSet);
 
