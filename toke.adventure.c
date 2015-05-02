@@ -70,10 +70,10 @@ int main()
    LoadRooms(loadedRooms, 7);
    ExecuteGameLoop(loadedRooms, 7);
 
-   exit(EXIT_SUCCESS);
-
    // This is a test method to output all the rooms struct
    // DisplayRoomsStruct(loadedRooms, 7);
+
+   exit(EXIT_SUCCESS);
 }
 
 /**************************************************************
@@ -100,9 +100,9 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
    char directoryName[80];
    GetRoomsDirName(directoryName, 80);
    char userStepsFileName[80];
-   strncpy(userStepsFileName, directoryName, 80);
+   strncpy(userStepsFileName, directoryName, 79);
    strcat(userStepsFileName, "/");
-   strncat(userStepsFileName, "tracker", 80);
+   strncat(userStepsFileName, "tracker", 79);
 
    int userWon = 0;
    int numUserSteps = 0;
@@ -112,7 +112,7 @@ void ExecuteGameLoop(struct Room rooms[], int maxRoomNumber)
 
       // Get user room name input
       char userInput[80];
-      fgets(userInput, 80, stdin);
+      fgets(userInput, 79, stdin);
       printf("\n");
       RemoveNewLineAndAddNullTerm(userInput);
 
@@ -373,7 +373,7 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
    int i;
    char fileName[80];
    char directoryName[80];
-   GetRoomsDirName(directoryName, 80);
+   GetRoomsDirName(directoryName, 79);
    char roomNames[7][80];
 
    // Get all the room names and save to an array
@@ -387,7 +387,7 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
       {
          if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0)
          {
-            strncpy(roomNames[i], dir->d_name, 80);
+            strncpy(roomNames[i], dir->d_name, 79);
             i++;
          }
       }
@@ -400,29 +400,29 @@ void LoadRooms(struct Room rooms[], int maxRoomNumber)
    {
       FILE *filePointer;
       // Generate the file name
-      strncpy(fileName, directoryName, 80);
+      strncpy(fileName, directoryName, 79);
       strcat(fileName, "/");
-      strncat(fileName, roomNames[i], 80);
+      strncat(fileName, roomNames[i], 79);
 
       // Load the room name to the struct
-      strncpy(rooms[i].roomName, roomNames[i], 80);
+      strncpy(rooms[i].roomName, roomNames[i], 79);
 
       // Read from files and load into room struct
       filePointer = fopen(fileName, "r");
-      while(fgets(readString, 200, filePointer))
+      while(fgets(readString, 199, filePointer))
       {
          // Load the connections
          if (strstr(readString, "CONNECTION") != NULL) {
-            strncpy(saveString, readString + 14, 80);
+            strncpy(saveString, readString + 14, 79);
             RemoveNewLineAndAddNullTerm(saveString);
             AddConnectionToRoom(rooms, i, saveString);
          }
 
          // Load the room type
          if (strstr(readString, "ROOM TYPE:") != NULL) {
-            strncpy(saveString, readString + 11, 80);
+            strncpy(saveString, readString + 11, 79);
             RemoveNewLineAndAddNullTerm(saveString);
-            strncpy(rooms[i].roomType, saveString, 80);
+            strncpy(rooms[i].roomType, saveString, 79);
          }
       }
 
@@ -556,7 +556,7 @@ void InitializeEmptyRooms(struct Room rooms[], int maxRoomNumber)
 void GenerateRoomsDirectory()
 {
    char dirName[80];
-   GetRoomsDirName(dirName, 80);
+   GetRoomsDirName(dirName, 79);
 
    // Create rooms directory
    if (stat(dirName, &st) == -1)
@@ -605,7 +605,7 @@ void GetRoomsDirName(char *returnValue, int maxLen)
 void GenerateAllRoomFiles()
 {
    char directoryName[80];
-   GetRoomsDirName(directoryName, 80);
+   GetRoomsDirName(directoryName, 79);
 
    // Create room files
    FILE *filePointer;
@@ -639,12 +639,12 @@ void GenerateAllRoomFiles()
    {
       GetRandomElement(possibleRoomNames, maxRoomNumber, i, roomName);
       RemoveElementByValue(possibleRoomNames, numPossibleRoomNames, roomName);
-      strncpy(roomNames[i], roomName, 80);
+      strncpy(roomNames[i], roomName, 79);
 
       // Generate the file name
-      strncpy(fileName, directoryName, 80);
+      strncpy(fileName, directoryName, 79);
       strcat(fileName, "/");
-      strncat(fileName, roomName, 80);
+      strncat(fileName, roomName, 79);
 
       // Create the files
       filePointer = fopen(fileName, "w");
@@ -672,9 +672,9 @@ void GenerateAllRoomFiles()
    for (i = 0; i < maxRoomNumber; i++)
    {
       // Generate the file name
-      strncpy(fileName, directoryName, 80);
+      strncpy(fileName, directoryName, 79);
       strcat(fileName, "/");
-      strncat(fileName, rooms[i].roomName, 80);
+      strncat(fileName, rooms[i].roomName, 79);
 
       // Create the files
       filePointer = fopen(fileName, "w");
@@ -743,15 +743,15 @@ void ClearRooms(struct Room rooms[], int maxRoomNumber)
    int j;
    for (i = 0; i < maxRoomNumber; i++)
    {
-      strncpy(rooms[i].roomName, "", 80);
-      strncpy(rooms[i].roomType, "", 80);
+      strncpy(rooms[i].roomName, "", 79);
+      strncpy(rooms[i].roomType, "", 79);
 
       rooms[i].numOpenConnections = 0;
       rooms[i].totalRoomConnections = 0;
 
       for (j = 0; j < maxRoomConnections; j++)
       {
-         strncpy(rooms[i].connections[j], "", 80);
+         strncpy(rooms[i].connections[j], "", 79);
       }
    }
 }
@@ -790,20 +790,20 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
    for (i = 0; i < maxRoomNumber; i++)
    {
       // Assign the room name
-      strncpy(rooms[i].roomName, roomNames[i], 80);
+      strncpy(rooms[i].roomName, roomNames[i], 79);
 
       // Assign the room types
       if (i == startingRoomNumber)
       {
-         strncpy(rooms[i].roomType, "START_ROOM", 80);
+         strncpy(rooms[i].roomType, "START_ROOM", 79);
       }
       else if (i == endingRoomNumber)
       {
-         strncpy(rooms[i].roomType, "END_ROOM", 80);
+         strncpy(rooms[i].roomType, "END_ROOM", 79);
       }
       else
       {
-         strncpy(rooms[i].roomType, "MID_ROOM", 80);
+         strncpy(rooms[i].roomType, "MID_ROOM", 79);
       }
 
       // Assign a random number of open connections. This means how
@@ -812,7 +812,7 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       randomNumber = GenerateRandomNumber(3, 6, i);
       for (j = 0; j < randomNumber; j++)
       {
-         strncpy(rooms[i].connections[j], "OPEN", 80);
+         strncpy(rooms[i].connections[j], "OPEN", 79);
       }
       rooms[i].numOpenConnections = randomNumber;
       rooms[i].totalRoomConnections = randomNumber;
@@ -824,7 +824,7 @@ void InitializeRoomsArray(struct Room rooms[], int maxRoomNumber, int maxChar, c
       {
          if (strcmp(rooms[i].connections[k], "OPEN") != 0)
          {
-          strncpy(rooms[i].connections[k], "CLOSED", 80);
+            strncpy(rooms[i].connections[k], "CLOSED", 79);
          }
       }
    }
@@ -925,7 +925,7 @@ int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToC
       if (strcmp(rooms[currRoomPos].connections[i], "OPEN") == 0)
       {
          rooms[currRoomPos].numOpenConnections--;
-         strncpy(rooms[currRoomPos].connections[i], rooms[roomToConnectToPos].roomName, 80);
+         strncpy(rooms[currRoomPos].connections[i], rooms[roomToConnectToPos].roomName, 79);
          break;
       }
    }
@@ -936,7 +936,7 @@ int ConnectRooms(struct Room rooms[], int numRooms, int currRoomPos, int roomToC
       if (strcmp(rooms[roomToConnectToPos].connections[i], "OPEN") == 0)
       {
          rooms[roomToConnectToPos].numOpenConnections--;
-         strncpy(rooms[roomToConnectToPos].connections[i], rooms[currRoomPos].roomName, 80);
+         strncpy(rooms[roomToConnectToPos].connections[i], rooms[currRoomPos].roomName, 79);
          break;
       }
    }
@@ -997,7 +997,7 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
       randomNumber = (randomNumber + i) % 10;
    }
 
-   strncpy(returnValue, array[randomNumber], 80);
+   strncpy(returnValue, array[randomNumber], 79);
 }
 
 /**************************************************************
@@ -1017,7 +1017,6 @@ void GetRandomElement(char **array, int arraySize, int randomIncrement, char *re
  * ***************************************************************/
 int GenerateRandomNumber(const int minNumber, const int maxNumber, const int timeOffSet)
 {
-
    // Set seed of random number to make number more random.
    srand(time(0) + timeOffSet);
 
